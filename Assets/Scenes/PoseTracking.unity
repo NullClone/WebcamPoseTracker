@@ -376,7 +376,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &806601305
 RectTransform:
   m_ObjectHideFlags: 0
@@ -472,6 +472,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1727122923}
   - component: {fileID: 1727122922}
+  - component: {fileID: 1727122924}
   m_Layer: 0
   m_Name: Runner
   m_TagString: Untagged
@@ -491,9 +492,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 583b38ffa85b4b4479fc41864e76da03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelAsset: {fileID: 5022602860645237092, guid: 64d0888ffbf13e6488c08a894eb715aa, type: 3}
-  _inputImageSize: 256
-  _backendType: 256
+  _assetLoader: {fileID: 1727122924}
   _imageSource: {fileID: 1814564739}
 --- !u!4 &1727122923
 Transform:
@@ -510,6 +509,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1727122924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1727122921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54be4c7301aa84549be38ee8443201df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _backendType: 256
+  _detector: {fileID: 5022602860645237092, guid: 296dae8ab858cb04e88edbca990f2af4, type: 3}
+  _landmarker: {fileID: 5022602860645237092, guid: 06ac14cc650eba240a1977d39a38a511, type: 3}
 --- !u!1 &1739471168
 GameObject:
   m_ObjectHideFlags: 0
@@ -629,7 +643,6 @@ MonoBehaviour:
   _camera: {fileID: 0}
   _outputTexture: {fileID: 0}
   _outputResolution: {x: 1920, y: 1080}
-  _shader: {fileID: 0}
 --- !u!4 &1814564740
 Transform:
   m_ObjectHideFlags: 0

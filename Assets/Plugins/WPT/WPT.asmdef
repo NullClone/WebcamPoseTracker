@@ -2,7 +2,8 @@
     "name": "WPT",
     "rootNamespace": "",
     "references": [
-        "GUID:63a57c8b658089e49a173b0f0c4870a7"
+        "GUID:63a57c8b658089e49a173b0f0c4870a7",
+        "GUID:d8b63aba1907145bea998dd612889d6b"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,4 +1,3 @@
-using System.Collections;
 using Unity.InferenceEngine;
 using UnityEngine;
 
@@ -8,66 +7,40 @@ namespace WPT
     {
         // Fields
 
-        [SerializeField] private ModelAsset _modelAsset;
-        [SerializeField] private BackendType _backendType = BackendType.GPUCompute;
-        [SerializeField] private int _inputImageSize;
+        [SerializeField] private ModelAssetLoader _assetLoader;
         [SerializeField] private ImageSource _imageSource;
 
-
-        private Model _model;
-        private Worker _worker;
+        private const int _numKeypoints = 33;
+        private const int detectorInputSize = 224;
+        private const int landmarkerInputSize = 256;
 
 
         // Methods
 
-        private void Start()
-        {
-            if (_modelAsset)
-            {
-                _model = ModelLoader.Load(_modelAsset);
-            }
-
-            if (_model == null) return;
-
-            _worker = new Worker(_model, _backendType);
-        }
-
         private void Update()
         {
-            if (_worker == null) return;
+            if (_assetLoader == null || _imageSource == null) return;
 
-            StartCoroutine(ExecuteModel());
+            ExecuteModel();
         }
 
-        private void OnDestroy()
+        private void ExecuteModel()
         {
-            if (_worker != null)
-            {
-                _worker.Dispose();
-                _worker = null;
-            }
-        }
+            if (_imageSource.Texture == null ||
+                _assetLoader._detectorWorker == null ||
+                _assetLoader._landmarkerWorker == null) return;
 
+            using var detectorInput = new Tensor<float>(new TensorShape(1, detectorInputSize, detectorInputSize, 3));
+            using var landmarkerInput = new Tensor<float>(new TensorShape(1, landmarkerInputSize, landmarkerInputSize, 3));
 
-        private IEnumerator ExecuteModel()
-        {
-            if (_imageSource == null || _imageSource.Texture == null) yield break;
+            TextureConverter.ToTensor(_imageSource.Texture, detectorInput);
+            TextureConverter.ToTensor(_imageSource.Texture, landmarkerInput);
 
-            var shape = new TensorShape(1, 3, _inputImageSize, _inputImageSize);
+            _assetLoader._detectorWorker.SetInput(0, detectorInput);
+            _assetLoader._landmarkerWorker.SetInput(0, landmarkerInput);
 
-            var input = new Tensor<float>(shape);
-
-            TextureConverter.ToTensor(_imageSource.Texture, input);
-
-            yield return _worker.ScheduleIterable(input);
-
-            input.Dispose();
-
-            var scores = _worker.PeekOutput(0);
-            var landmarks = _worker.PeekOutput(1);
-
-            scores.Dispose();
-            landmarks.Dispose();
+            _assetLoader._detectorWorker.Schedule();
+            _assetLoader._landmarkerWorker.Schedule();
         }
     }
 }
