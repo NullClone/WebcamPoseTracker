@@ -19,8 +19,7 @@ namespace WPT
         private SerializedProperty _webcamResolution;
         private SerializedProperty _webcamFrameRate;
         private SerializedProperty _camera;
-        private SerializedProperty _outputTexture;
-        private SerializedProperty _outputResolution;
+        private SerializedProperty _resolution;
 
 
         // Methods
@@ -37,62 +36,73 @@ namespace WPT
 
             var type = (ImageSourceType)_sourceType.enumValueIndex;
 
-            if (type == ImageSourceType.Texture)
+            switch (type)
             {
-                EditorGUILayout.PropertyField(_texture, Labels.Asset);
-            }
-
-            if (type == ImageSourceType.Video)
-            {
-                EditorGUILayout.PropertyField(_video, Labels.Asset);
-                EditorGUILayout.PropertyField(_videoPlayer, Labels.Player);
-            }
-
-            if (type == ImageSourceType.Webcam)
-            {
-                EditorGUILayout.BeginHorizontal();
-
-                EditorGUI.BeginDisabledGroup(true);
-
-                EditorGUILayout.PropertyField(_webcamName, Labels.DeviceName);
-
-                EditorGUI.EndDisabledGroup();
-
-                var rect = EditorGUILayout.GetControlRect(false, GUILayout.Width(60));
-
-                if (EditorGUI.DropdownButton(rect, Labels.Select, FocusType.Keyboard))
-                {
-                    var menu = new GenericMenu();
-
-                    foreach (var device in WebCamTexture.devices)
+                case ImageSourceType.Texture:
                     {
-                        menu.AddItem(new GUIContent(device.name), false, () => ChangeWebcam(device.name));
+                        EditorGUILayout.PropertyField(_texture);
+
+                        break;
                     }
+                case ImageSourceType.Video:
+                    {
+                        EditorGUILayout.PropertyField(_video);
+                        EditorGUILayout.PropertyField(_videoPlayer);
 
-                    menu.DropDown(rect);
-                }
+                        break;
+                    }
+                case ImageSourceType.Webcam:
+                    {
+                        EditorGUILayout.BeginHorizontal();
 
-                EditorGUILayout.EndHorizontal();
+                        EditorGUI.BeginDisabledGroup(true);
 
-                EditorGUILayout.PropertyField(_webcamResolution, Labels.Resolution);
-                EditorGUILayout.PropertyField(_webcamFrameRate, Labels.FrameRate);
-            }
+                        EditorGUILayout.PropertyField(_webcamName, new GUIContent("Device Name"));
 
-            if (type == ImageSourceType.Camera)
-            {
-                EditorGUILayout.PropertyField(_camera);
+                        EditorGUI.EndDisabledGroup();
+
+                        var rect = EditorGUILayout.GetControlRect(false, GUILayout.Width(60));
+
+                        if (EditorGUI.DropdownButton(rect, new GUIContent("Select"), FocusType.Keyboard))
+                        {
+                            var menu = new GenericMenu();
+
+                            foreach (var device in WebCamTexture.devices)
+                            {
+                                menu.AddItem(new GUIContent(device.name), false,
+                                    () =>
+                                    {
+                                        serializedObject.Update();
+
+                                        _webcamName.stringValue = device.name;
+
+                                        serializedObject.ApplyModifiedProperties();
+                                    });
+                            }
+
+                            menu.DropDown(rect);
+                        }
+
+                        EditorGUILayout.EndHorizontal();
+
+                        EditorGUILayout.PropertyField(_webcamResolution, new GUIContent("Resolution"));
+                        EditorGUILayout.PropertyField(_webcamFrameRate, new GUIContent("FrameRate"));
+
+                        break;
+                    }
+                case ImageSourceType.Camera:
+                    {
+                        EditorGUILayout.PropertyField(_camera);
+
+                        break;
+                    }
             }
 
             EditorGUI.indentLevel--;
 
             EditorGUILayout.Space();
 
-            EditorGUILayout.PropertyField(_outputTexture);
-
-            if (_outputTexture.objectReferenceValue == null)
-            {
-                EditorGUILayout.PropertyField(_outputResolution);
-            }
+            EditorGUILayout.PropertyField(_resolution, new GUIContent("Output Resolution"));
 
             EditorGUI.EndDisabledGroup();
 
@@ -110,29 +120,8 @@ namespace WPT
             _webcamResolution = serializedObject.FindProperty("_webcamResolution");
             _webcamFrameRate = serializedObject.FindProperty("_webcamFrameRate");
             _camera = serializedObject.FindProperty("_camera");
-            _outputTexture = serializedObject.FindProperty("_outputTexture");
-            _outputResolution = serializedObject.FindProperty("_outputResolution");
+            _resolution = serializedObject.FindProperty("_resolution");
         }
-
-        private void ChangeWebcam(string name)
-        {
-            serializedObject.Update();
-
-            _webcamName.stringValue = name;
-
-            serializedObject.ApplyModifiedProperties();
-        }
-    }
-
-    static class Labels
-    {
-        public static GUIContent Asset = new("Asset");
-        public static GUIContent Player = new("Player");
-        public static GUIContent DeviceName = new("Device Name");
-        public static GUIContent FrameRate = new("Frame Rate");
-        public static GUIContent Resolution = new("Resolution");
-        public static GUIContent Select = new("Select");
-        public static GUIContent URL = new("URL");
     }
 }
 #endif

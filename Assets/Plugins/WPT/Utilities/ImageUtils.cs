@@ -47,10 +47,28 @@ namespace WPT.Utilities
 
             shader.SetMatrix(s_affineMatrix, matrix);
 
-            shader.Dispatch(s_ImageSample, IDivC(dstTensor.shape[1], 8), IDivC(dstTensor.shape[1], 8), 1);
+            shader.Dispatch(s_ImageSample,
+                IDivC(dstTensor.shape[1], 8),
+                IDivC(dstTensor.shape[1], 8), 1);
         }
 
-        public static int IDivC(int v, int div)
+        public static void TextureBlit(Texture srcTexture, RenderTexture dstTexture, bool vflip = false)
+        {
+            if (srcTexture == null) return;
+
+            var aspect1 = (float)srcTexture.width / srcTexture.height;
+            var aspect2 = (float)dstTexture.width / dstTexture.height;
+
+            var scale = Vector2.Min(Vector2.one, new Vector2(aspect2 / aspect1, aspect1 / aspect2));
+            if (vflip) scale.y *= -1;
+
+            var offset = (Vector2.one - scale) / 2;
+
+            Graphics.Blit(srcTexture, dstTexture, scale, offset);
+        }
+
+
+        private static int IDivC(int v, int div)
         {
             return (v + div - 1) / div;
         }

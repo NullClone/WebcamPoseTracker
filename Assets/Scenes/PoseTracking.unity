@@ -128,7 +128,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 457804366}
-  - component: {fileID: 457804365}
+  - component: {fileID: 457804367}
   - component: {fileID: 457804364}
   m_Layer: 0
   m_Name: AssetLoader
@@ -150,20 +150,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   shader: {fileID: 7200000, guid: 313dc76684f3d8545890de339067bbef, type: 3}
---- !u!114 &457804365
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 457804363}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 583b38ffa85b4b4479fc41864e76da03, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _assetLoader: {fileID: 1727122924}
-  _imageSource: {fileID: 1814564739}
 --- !u!4 &457804366
 Transform:
   m_ObjectHideFlags: 0
@@ -179,6 +165,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &457804367
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 457804363}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54be4c7301aa84549be38ee8443201df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _backendType: 256
+  _detector: {fileID: 5022602860645237092, guid: 296dae8ab858cb04e88edbca990f2af4, type: 3}
+  _landmarker: {fileID: 5022602860645237092, guid: 06ac14cc650eba240a1977d39a38a511, type: 3}
 --- !u!1 &484617631
 GameObject:
   m_ObjectHideFlags: 0
@@ -317,8 +318,8 @@ Camera:
   m_GameObject: {fileID: 584802033}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 1, g: 1, b: 1, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -339,9 +340,9 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
-  far clip plane: 1000
-  field of view: 60
+  near clip plane: 0.01
+  far clip plane: 100
+  field of view: 45
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -398,8 +399,8 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
-  m_Antialiasing: 0
+  m_RenderPostProcessing: 1
+  m_Antialiasing: 1
   m_AntialiasingQuality: 2
   m_StopNaN: 0
   m_Dithering: 0
@@ -419,6 +420,72 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+--- !u!1 &633506226
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 633506228}
+  - component: {fileID: 633506227}
+  m_Layer: 0
+  m_Name: Video Player
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!328 &633506227
+VideoPlayer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 633506226}
+  m_Enabled: 1
+  m_VideoClip: {fileID: 32900000, guid: 15588459e6605c2489744026931a299e, type: 3}
+  m_TargetCameraAlpha: 1
+  m_TargetCamera3DLayout: 0
+  m_TargetCamera: {fileID: 0}
+  m_TargetTexture: {fileID: 0}
+  m_TimeReference: 0
+  m_TargetMaterialRenderer: {fileID: 0}
+  m_TargetMaterialProperty: <noninit>
+  m_RenderMode: 4
+  m_AspectRatio: 2
+  m_DataSource: 0
+  m_TimeUpdateMode: 2
+  m_PlaybackSpeed: 1
+  m_AudioOutputMode: 0
+  m_TargetAudioSources: []
+  m_DirectAudioVolumes: []
+  m_Url: 
+  m_EnabledAudioTracks: 
+  m_DirectAudioMutes: 
+  m_ControlledAudioTrackCount: 0
+  m_PlayOnAwake: 1
+  m_SkipOnDrop: 1
+  m_Looping: 1
+  m_WaitForFirstFrame: 1
+  m_FrameReadyEventEnabled: 0
+  m_VideoShaders: []
+--- !u!4 &633506228
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 633506226}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &806601304
 GameObject:
   m_ObjectHideFlags: 0
@@ -446,7 +513,7 @@ RectTransform:
   m_GameObject: {fileID: 806601304}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 5, y: 5, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 484617635}
@@ -563,12 +630,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1727122921}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 54be4c7301aa84549be38ee8443201df, type: 3}
+  m_Script: {fileID: 11500000, guid: 583b38ffa85b4b4479fc41864e76da03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _backendType: 256
-  _detector: {fileID: 5022602860645237092, guid: 296dae8ab858cb04e88edbca990f2af4, type: 3}
-  _landmarker: {fileID: 5022602860645237092, guid: 06ac14cc650eba240a1977d39a38a511, type: 3}
+  _assetLoader: {fileID: 457804367}
+  _imageSource: {fileID: 1814564739}
 --- !u!1 &1739471168
 GameObject:
   m_ObjectHideFlags: 0
@@ -680,14 +746,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _sourceType: 1
   _texture: {fileID: 0}
-  _video: {fileID: 32900000, guid: 15588459e6605c2489744026931a299e, type: 3}
-  _videoPlayer: {fileID: 0}
-  _webcamName: 
+  _video: {fileID: 0}
+  _videoPlayer: {fileID: 633506227}
+  _webcamName: USB2.0 FHD UVC WebCam
   _webcamResolution: {x: 1920, y: 1080}
   _webcamFrameRate: 30
   _camera: {fileID: 0}
-  _outputTexture: {fileID: 0}
-  _outputResolution: {x: 1920, y: 1080}
+  _resolution: {x: 1920, y: 1080}
 --- !u!4 &1814564740
 Transform:
   m_ObjectHideFlags: 0
@@ -846,6 +911,7 @@ SceneRoots:
   - {fileID: 2020369420}
   - {fileID: 1517205636}
   - {fileID: 1814564740}
+  - {fileID: 633506228}
   - {fileID: 457804366}
   - {fileID: 1727122923}
   - {fileID: 484617635}

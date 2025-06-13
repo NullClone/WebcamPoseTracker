@@ -21,7 +21,7 @@ namespace WPT
 
             if (_source == null)
             {
-                _source = GetComponent<ImageSource>();
+                _source = gameObject.GetComponent<ImageSource>();
             }
 
             if (_source == null) return;
