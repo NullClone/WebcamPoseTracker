@@ -7,34 +7,23 @@ namespace WPT
     {
         // Fields
 
-        [SerializeField] private ImageSource _source;
         [SerializeField] private RawImage _image;
 
-        private bool isReady = false;
+        private ImageSource _source;
 
 
         // Methods
 
-        void Start()
+        void Awake()
         {
-            if (_image == null) return;
-
-            if (_source == null)
-            {
-                _source = gameObject.GetComponent<ImageSource>();
-            }
-
-            if (_source == null) return;
-
-            isReady = true;
+            _source = gameObject.GetComponent<ImageSource>();
         }
 
         void Update()
         {
-            if (isReady)
-            {
-                _image.texture = _source.Texture;
-            }
+            if (_image == null || _source == null) return;
+
+            _image.texture = _source.Texture;
         }
     }
 }

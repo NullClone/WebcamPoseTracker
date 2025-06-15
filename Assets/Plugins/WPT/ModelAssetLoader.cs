@@ -6,25 +6,36 @@ namespace WPT
 {
     public sealed class ModelAssetLoader : MonoBehaviour
     {
+        // Properties
+
+        public Worker DetectorWorker => _detectorWorker;
+
+        public Worker LandmarkerWorker => _landmarkerWorker;
+
+        public float[,] Anchors { get; private set; }
+
+
         // Fields
 
         [SerializeField] private BackendType _backendType = BackendType.GPUCompute;
         [SerializeField] private ModelAsset _detector;
         [SerializeField] private ModelAsset _landmarker;
+        [SerializeField] private TextAsset _anchors;
 
         private Model _detectorModel;
         private Model _landmarkerModel;
-
-        public Worker _detectorWorker;
-        public Worker _landmarkerWorker;
+        private Worker _detectorWorker;
+        private Worker _landmarkerWorker;
 
 
         // Methods
 
-        private void Start()
+        private void Awake()
         {
             LoadModel();
             LoadWorker();
+
+            Anchors = ModelUtils.LoadAnchors(_anchors.text);
         }
 
         private void OnDestroy()
@@ -46,11 +57,10 @@ namespace WPT
         {
             if (_detector)
             {
-                _detectorModel = ModelLoader.Load(_detector);
-
+                var detectorModel = ModelLoader.Load(_detector);
                 var graph = new FunctionalGraph();
-                var input = graph.AddInput(_detectorModel, 0);
-                var outputs = Functional.Forward(_detectorModel, input);
+                var input = graph.AddInput(detectorModel, 0);
+                var outputs = Functional.Forward(detectorModel, input);
                 var results = ModelUtils.ArgMaxFiltering(outputs[0], outputs[1]);
 
                 _detectorModel = graph.Compile(results.Item1, results.Item2, results.Item3);

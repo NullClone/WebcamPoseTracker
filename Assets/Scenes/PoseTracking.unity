@@ -119,67 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &457804363
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 457804366}
-  - component: {fileID: 457804367}
-  - component: {fileID: 457804364}
-  m_Layer: 0
-  m_Name: AssetLoader
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &457804364
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 457804363}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 376471e6c43fd8f41aa2b5f091ab4e2f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  shader: {fileID: 7200000, guid: 313dc76684f3d8545890de339067bbef, type: 3}
---- !u!4 &457804366
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 457804363}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &457804367
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 457804363}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 54be4c7301aa84549be38ee8443201df, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _backendType: 256
-  _detector: {fileID: 5022602860645237092, guid: 296dae8ab858cb04e88edbca990f2af4, type: 3}
-  _landmarker: {fileID: 5022602860645237092, guid: 06ac14cc650eba240a1977d39a38a511, type: 3}
 --- !u!1 &484617631
 GameObject:
   m_ObjectHideFlags: 0
@@ -599,8 +538,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1727122923}
   - component: {fileID: 1727122924}
+  - component: {fileID: 1727122925}
   m_Layer: 0
-  m_Name: Runner
+  m_Name: InferenceRunner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -633,8 +573,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 583b38ffa85b4b4479fc41864e76da03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assetLoader: {fileID: 457804367}
+  _assetLoader: {fileID: 1727122925}
   _imageSource: {fileID: 1814564739}
+--- !u!114 &1727122925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1727122921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54be4c7301aa84549be38ee8443201df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _backendType: 256
+  _detector: {fileID: 5022602860645237092, guid: 296dae8ab858cb04e88edbca990f2af4, type: 3}
+  _landmarker: {fileID: 5022602860645237092, guid: 06ac14cc650eba240a1977d39a38a511, type: 3}
+  _anchors: {fileID: 4900000, guid: e4eddab5c5d772647a6047cf4dc52745, type: 3}
 --- !u!1 &1739471168
 GameObject:
   m_ObjectHideFlags: 0
@@ -748,10 +704,10 @@ MonoBehaviour:
   _texture: {fileID: 0}
   _video: {fileID: 0}
   _videoPlayer: {fileID: 633506227}
-  _webcamName: USB2.0 FHD UVC WebCam
+  _webcamName: 
   _webcamResolution: {x: 1920, y: 1080}
   _webcamFrameRate: 30
-  _camera: {fileID: 0}
+  _playOnAwake: 1
   _resolution: {x: 1920, y: 1080}
 --- !u!4 &1814564740
 Transform:
@@ -780,7 +736,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54aab14fb94291749a04fe4e1d16187d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _source: {fileID: 1814564739}
   _image: {fileID: 806601306}
 --- !u!1 &2020369418
 GameObject:
@@ -912,6 +867,5 @@ SceneRoots:
   - {fileID: 1517205636}
   - {fileID: 1814564740}
   - {fileID: 633506228}
-  - {fileID: 457804366}
   - {fileID: 1727122923}
   - {fileID: 484617635}

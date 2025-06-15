@@ -8,9 +8,7 @@ namespace WPT
     {
         // Properties
 
-        public Texture Texture => _buffer;
-
-        public RenderTexture RenderTexture => _buffer;
+        public RenderTexture Texture => _buffer;
 
         public Vector2Int Resolution => _resolution;
 
@@ -24,7 +22,7 @@ namespace WPT
         [SerializeField] private string _webcamName = "";
         [SerializeField] private Vector2Int _webcamResolution = new(1920, 1080);
         [SerializeField] private int _webcamFrameRate = 30;
-        [SerializeField] private Camera _camera;
+        [SerializeField] private bool _playOnAwake = true;
         [SerializeField] private Vector2Int _resolution = new(1920, 1080);
 
         private WebCamTexture _webcam;
@@ -33,40 +31,19 @@ namespace WPT
 
         // Methods
 
+        private void Awake()
+        {
+            if (_playOnAwake)
+            {
+                Initialize();
+            }
+        }
+
         private void Start()
         {
-            _buffer = new RenderTexture(_resolution.x, _resolution.y, 0);
-
-            switch (_sourceType)
+            if (!_playOnAwake)
             {
-                case ImageSourceType.Video:
-                    {
-                        if (_videoPlayer == null) break;
-
-                        if (_video)
-                        {
-                            _videoPlayer.clip = _video;
-                        }
-
-                        _videoPlayer.renderMode = VideoRenderMode.APIOnly;
-                        _videoPlayer.Play();
-
-                        break;
-                    }
-                case ImageSourceType.Webcam:
-                    {
-                        Application.RequestUserAuthorization(UserAuthorization.WebCam);
-
-                        _webcam = new WebCamTexture(
-                            _webcamName,
-                            _webcamResolution.x,
-                            _webcamResolution.y,
-                            _webcamFrameRate);
-
-                        _webcam.Play();
-
-                        break;
-                    }
+                Initialize();
             }
         }
 
@@ -74,15 +51,6 @@ namespace WPT
         {
             switch (_sourceType)
             {
-                case ImageSourceType.Texture:
-                    {
-                        if (_texture)
-                        {
-                            ImageUtils.TextureBlit(_texture, _buffer);
-                        }
-
-                        break;
-                    }
                 case ImageSourceType.Video:
                     {
                         if (_videoPlayer && _videoPlayer.texture)
@@ -94,19 +62,10 @@ namespace WPT
                     }
                 case ImageSourceType.Webcam:
                     {
-                        if (_webcam.didUpdateThisFrame)
+                        if (_webcam && _webcam.didUpdateThisFrame)
                         {
-                            ImageUtils.TextureBlit(_webcam, _buffer, _webcam.videoVerticallyMirrored);
+                            ImageUtils.TextureBlit(_webcam, _buffer);
                         }
-
-                        break;
-                    }
-                case ImageSourceType.Camera:
-                    {
-                        if (_camera == null || _camera.enabled) break;
-
-                        _camera.targetTexture = _buffer;
-                        _camera.Render();
 
                         break;
                     }
@@ -127,6 +86,49 @@ namespace WPT
                 Destroy(_buffer);
 
                 _buffer = null;
+            }
+        }
+
+        private void Initialize()
+        {
+            _buffer = new RenderTexture(_resolution.x, _resolution.y, 0);
+
+            switch (_sourceType)
+            {
+                case ImageSourceType.Texture:
+                    {
+                        if (_texture == null) break;
+
+                        ImageUtils.TextureBlit(_texture, _buffer);
+
+                        break;
+                    }
+                case ImageSourceType.Video:
+                    {
+                        if (_videoPlayer == null) break;
+
+                        if (_video)
+                        {
+                            _videoPlayer.clip = _video;
+                        }
+
+                        _videoPlayer.renderMode = VideoRenderMode.APIOnly;
+                        _videoPlayer.Play();
+
+                        break;
+                    }
+                case ImageSourceType.Webcam:
+                    {
+                        _webcam = new WebCamTexture(
+                            _webcamName,
+                            _webcamResolution.x,
+                            _webcamResolution.y,
+                            _webcamFrameRate);
+
+                        _webcam.Play();
+
+                        break;
+                    }
             }
         }
     }

@@ -18,7 +18,7 @@ namespace WPT
         private SerializedProperty _webcamName;
         private SerializedProperty _webcamResolution;
         private SerializedProperty _webcamFrameRate;
-        private SerializedProperty _camera;
+        private SerializedProperty _playOnAwake;
         private SerializedProperty _resolution;
 
 
@@ -90,18 +90,12 @@ namespace WPT
 
                         break;
                     }
-                case ImageSourceType.Camera:
-                    {
-                        EditorGUILayout.PropertyField(_camera);
-
-                        break;
-                    }
             }
 
             EditorGUI.indentLevel--;
 
             EditorGUILayout.Space();
-
+            EditorGUILayout.PropertyField(_playOnAwake);
             EditorGUILayout.PropertyField(_resolution, new GUIContent("Output Resolution"));
 
             EditorGUI.EndDisabledGroup();
@@ -119,7 +113,7 @@ namespace WPT
             _webcamName = serializedObject.FindProperty("_webcamName");
             _webcamResolution = serializedObject.FindProperty("_webcamResolution");
             _webcamFrameRate = serializedObject.FindProperty("_webcamFrameRate");
-            _camera = serializedObject.FindProperty("_camera");
+            _playOnAwake = serializedObject.FindProperty("_playOnAwake");
             _resolution = serializedObject.FindProperty("_resolution");
         }
     }

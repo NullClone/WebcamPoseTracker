@@ -19,5 +19,24 @@ namespace WPT.Utilities
         {
             return Functional.Sigmoid(Functional.Clamp(rawScores, -scoreThreshold, scoreThreshold));
         }
+
+
+        public static float[,] LoadAnchors(string csv)
+        {
+            var anchors = csv.Split('\n');
+            var result = new float[anchors.Length - 1, 4];
+
+            for (int i = 0; i < anchors.Length - 1; i++)
+            {
+                var anchorValues = anchors[i].Split(',');
+
+                for (int j = 0; j < 4; j++)
+                {
+                    result[i, j] = float.Parse(anchorValues[j]);
+                }
+            }
+
+            return result;
+        }
     }
 }

@@ -5,6 +5,5 @@ namespace WPT
         Texture,
         Video,
         Webcam,
-        Camera,
     }
 }

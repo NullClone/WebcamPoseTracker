@@ -8,36 +8,35 @@ namespace WPT.Utilities
     {
         // Fields
 
-        public static ComputeShader shader;
-        public static int s_ImageSample;
+        private static readonly ComputeShader _shader = (ComputeShader)Resources.Load("ImageTransform");
 
-
-        private static readonly int s_Optr = Shader.PropertyToID("Optr");
-        private static readonly int s_X_tex2D = Shader.PropertyToID("X_tex2D");
-        private static readonly int s_O_height = Shader.PropertyToID("O_height");
-        private static readonly int s_O_width = Shader.PropertyToID("O_width");
-        private static readonly int s_O_channels = Shader.PropertyToID("O_channels");
-        private static readonly int s_X_height = Shader.PropertyToID("X_height");
-        private static readonly int s_X_width = Shader.PropertyToID("X_width");
-        private static readonly int s_affineMatrix = Shader.PropertyToID("affineMatrix");
+        private static readonly int ImageSample = _shader.FindKernel("ImageSample");
+        private static readonly int Optr = Shader.PropertyToID("Optr");
+        private static readonly int X_tex2D = Shader.PropertyToID("X_tex2D");
+        private static readonly int O_height = Shader.PropertyToID("O_height");
+        private static readonly int O_width = Shader.PropertyToID("O_width");
+        private static readonly int O_channels = Shader.PropertyToID("O_channels");
+        private static readonly int X_height = Shader.PropertyToID("X_height");
+        private static readonly int X_width = Shader.PropertyToID("X_width");
+        private static readonly int affineMatrix = Shader.PropertyToID("affineMatrix");
 
 
         // Methods
 
         public static void SampleImageAffine(Texture srcTexture, Tensor<float> dstTensor, float2x3 M)
         {
-            if (shader == null) return;
+            if (_shader == null) return;
 
             var tensorData = ComputeTensorData.Pin(dstTensor, false);
 
-            shader.SetTexture(s_ImageSample, s_X_tex2D, srcTexture);
-            shader.SetBuffer(s_ImageSample, s_Optr, tensorData.buffer);
+            _shader.SetTexture(ImageSample, X_tex2D, srcTexture);
+            _shader.SetBuffer(ImageSample, Optr, tensorData.buffer);
 
-            shader.SetInt(s_O_height, dstTensor.shape[1]);
-            shader.SetInt(s_O_width, dstTensor.shape[2]);
-            shader.SetInt(s_O_channels, dstTensor.shape[3]);
-            shader.SetInt(s_X_height, srcTexture.height);
-            shader.SetInt(s_X_width, srcTexture.width);
+            _shader.SetInt(O_height, dstTensor.shape[1]);
+            _shader.SetInt(O_width, dstTensor.shape[2]);
+            _shader.SetInt(O_channels, dstTensor.shape[3]);
+            _shader.SetInt(X_height, srcTexture.height);
+            _shader.SetInt(X_width, srcTexture.width);
 
             var matrix = new Matrix4x4(
                 new Vector4(M[0][0], M[0][1]),
@@ -45,9 +44,9 @@ namespace WPT.Utilities
                 new Vector4(M[2][0], M[2][1]),
                 Vector4.zero);
 
-            shader.SetMatrix(s_affineMatrix, matrix);
+            _shader.SetMatrix(affineMatrix, matrix);
 
-            shader.Dispatch(s_ImageSample,
+            _shader.Dispatch(ImageSample,
                 IDivC(dstTensor.shape[1], 8),
                 IDivC(dstTensor.shape[1], 8), 1);
         }
