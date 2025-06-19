@@ -1,0 +1,36 @@
+namespace WPT
+{
+    public enum BoneIndex : int
+    {
+        RightShoulderBend = 0,
+        RightForearmBend,
+        RightHand,
+        RightThumb2,
+        RightMid1,
+        LeftShoulderBend,
+        LeftForearmBend,
+        LeftHand,
+        LeftThumb2,
+        LeftMid1,
+        LeftEar,
+        LeftEye,
+        RightEar,
+        RightEye,
+        Nose,
+        RightThighBend,
+        RightShin,
+        RightFoot,
+        RightToe,
+        LeftThighBend,
+        LeftShin,
+        LeftFoot,
+        LeftToe,
+        AbdomenUpper,
+        Hip,
+        Head,
+        Neck,
+        Spine,
+        Count,
+        None,
+    }
+}

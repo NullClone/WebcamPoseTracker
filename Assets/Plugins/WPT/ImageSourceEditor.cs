@@ -26,6 +26,8 @@ namespace WPT
 
         public override void OnInspectorGUI()
         {
+            var imageSource = (ImageSource)target;
+
             serializedObject.Update();
 
             EditorGUI.BeginDisabledGroup(Application.isPlaying);
@@ -97,6 +99,14 @@ namespace WPT
             EditorGUILayout.Space();
             EditorGUILayout.PropertyField(_playOnAwake);
             EditorGUILayout.PropertyField(_resolution, new GUIContent("Output Resolution"));
+            EditorGUILayout.Space();
+
+            if (GUILayout.Button("Add Debugger"))
+            {
+                if (imageSource.gameObject.GetComponent<ImageSourceDebugger>()) return;
+
+                Undo.AddComponent<ImageSourceDebugger>(imageSource.gameObject);
+            }
 
             EditorGUI.EndDisabledGroup();
 

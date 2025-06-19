@@ -37,9 +37,9 @@ namespace WPT.Utilities
             return new float2x3(1, 0, delta.x, 0, 1, delta.y);
         }
 
-        public static float2x3 ScaleMatrix(float2 scale)
+        public static float2x3 ScaleMatrix(float x, float y)
         {
-            return new float2x3(scale.x, 0, 0, 0, scale.y, 0);
+            return new float2x3(x, 0, 0, 0, y, 0);
         }
     }
 }
