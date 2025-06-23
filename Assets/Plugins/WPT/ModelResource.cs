@@ -1,10 +1,12 @@
+using System;
 using Unity.InferenceEngine;
 using UnityEngine;
 using WPT.Utilities;
 
 namespace WPT
 {
-    public sealed class ModelAssetLoader : MonoBehaviour
+    [CreateAssetMenu(menuName = "Model Resource")]
+    public sealed class ModelResource : ScriptableObject, IDisposable
     {
         // Properties
 
@@ -31,7 +33,7 @@ namespace WPT
 
         // Methods
 
-        private void Awake()
+        public void Initialize()
         {
             if (_detector)
             {
@@ -54,7 +56,7 @@ namespace WPT
             Anchors = ModelUtils.LoadAnchors(_anchors.text);
         }
 
-        private void OnDestroy()
+        public void Dispose()
         {
             if (_detectorWorker != null)
             {

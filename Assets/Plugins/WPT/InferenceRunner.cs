@@ -12,83 +12,113 @@ namespace WPT
 
         public Vector3[] Keypoints { get; set; } = new Vector3[NumKeypoints];
 
+        public const int NumKeypoints = 33;
+        public const int DetectorInputSize = 224;
+        public const int LandmarkerInputSize = 256;
+
 
         // Fields
 
-        [SerializeField] private ModelAssetLoader _assetLoader;
+        [SerializeField] private ModelResource _model;
         [SerializeField] private ImageSource _imageSource;
-        [SerializeField] private Avatar _avatar;
+        [SerializeField] private float _scoreThreshold = 0.75f;
 
         private Tensor<float> _detectorInput;
         private Tensor<float> _landmarkerInput;
         private Awaitable _executeAwaitable;
         private float2x3 M;
         private float2x3 M2;
+        private bool _isInitialized;
 
 
-        public const int NumKeypoints = 33;
-        public const int DetectorInputSize = 224;
-        public const int LandmarkerInputSize = 256;
-
-
-        // Methods
+        // Async Methods
 
         private async void Start()
         {
-            if (_assetLoader == null || _imageSource == null) return;
-
-            _detectorInput = new Tensor<float>(new TensorShape(1, DetectorInputSize, DetectorInputSize, 3));
-            _landmarkerInput = new Tensor<float>(new TensorShape(1, LandmarkerInputSize, LandmarkerInputSize, 3));
-
-            while (true)
+            if (_isInitialized)
             {
-                try
+                while (true)
                 {
-                    _executeAwaitable = ExecuteModel();
+                    try
+                    {
+                        _executeAwaitable = ExecuteModel();
 
-                    await _executeAwaitable;
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
+                        await _executeAwaitable;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
                 }
             }
         }
 
         private async Awaitable ExecuteModel()
         {
-            var detectorWorker = _assetLoader.DetectorWorker;
-
-            if (detectorWorker == null) return;
+            if (_model.DetectorWorker == null || _model.LandmarkerWorker == null) return;
 
             SetDetectorInput();
 
-            detectorWorker.Schedule(_detectorInput);
+            _model.DetectorWorker.Schedule(_detectorInput);
 
-            using var outputIdx = await (detectorWorker.PeekOutput(0) as Tensor<int>).ReadbackAndCloneAsync();
-            using var outputScore = await (detectorWorker.PeekOutput(1) as Tensor<float>).ReadbackAndCloneAsync();
-            using var outputBox = await (detectorWorker.PeekOutput(2) as Tensor<float>).ReadbackAndCloneAsync();
+            using var outputIdx = await (_model.DetectorWorker.PeekOutput(0) as Tensor<int>).ReadbackAndCloneAsync();
+            using var outputScore = await (_model.DetectorWorker.PeekOutput(1) as Tensor<float>).ReadbackAndCloneAsync();
+            using var outputBox = await (_model.DetectorWorker.PeekOutput(2) as Tensor<float>).ReadbackAndCloneAsync();
 
-            if (outputScore[0] < 0.75f) return;
-
-            var landmarkerWorker = _assetLoader.LandmarkerWorker;
-
-            if (landmarkerWorker == null) return;
+            if (outputScore[0] < _scoreThreshold) return;
 
             SetLandmarkerInput(outputIdx, outputBox);
 
-            landmarkerWorker.Schedule(_landmarkerInput);
+            _model.LandmarkerWorker.Schedule(_landmarkerInput);
 
-            using var landmarks = await (landmarkerWorker.PeekOutput(0) as Tensor<float>).ReadbackAndCloneAsync();
+            using var landmarks = await (_model.LandmarkerWorker.PeekOutput(0) as Tensor<float>).ReadbackAndCloneAsync();
 
             SetKeypoint(landmarks);
         }
+
+
+        // Methods
+
+        private void Awake()
+        {
+            if (_model == null || _imageSource == null) return;
+
+            _model.Initialize();
+
+            _detectorInput = new Tensor<float>(new TensorShape(1, DetectorInputSize, DetectorInputSize, 3));
+            _landmarkerInput = new Tensor<float>(new TensorShape(1, LandmarkerInputSize, LandmarkerInputSize, 3));
+
+            _isInitialized = true;
+        }
+
+        private void OnDestroy()
+        {
+            _executeAwaitable?.Cancel();
+
+            if (_detectorInput != null)
+            {
+                _detectorInput.Dispose();
+                _detectorInput = null;
+            }
+
+            if (_landmarkerInput != null)
+            {
+                _landmarkerInput.Dispose();
+                _landmarkerInput = null;
+            }
+
+            if (_model != null)
+            {
+                _model.Dispose();
+            }
+        }
+
 
         private void SetDetectorInput()
         {
             var size = Mathf.Max(_imageSource.Resolution.x, _imageSource.Resolution.y);
 
-            var scale = size / (float)DetectorInputSize;
+            var scale = size / DetectorInputSize;
 
             var delta = 0.5f * (_imageSource.Resolution + new Vector2(-size, size));
 
@@ -101,10 +131,10 @@ namespace WPT
 
         private void SetLandmarkerInput(Tensor<int> idx, Tensor<float> box)
         {
-            var anchorPosition = DetectorInputSize * new float2(_assetLoader.Anchors[idx[0], 0], _assetLoader.Anchors[idx[0], 1]);
+            var anchorPosition = DetectorInputSize * new float2(_model.Anchors[idx[0], 0], _model.Anchors[idx[0], 1]);
 
-            var kp1 = MatrixUtils.Mul(M, anchorPosition + new float2(box[0, 0, 4 + (2 * 0) + 0], box[0, 0, 4 + (2 * 0) + 1]));
-            var kp2 = MatrixUtils.Mul(M, anchorPosition + new float2(box[0, 0, 4 + (2 * 1) + 0], box[0, 0, 4 + (2 * 1) + 1]));
+            var kp1 = MatrixUtils.Mul(M, anchorPosition + new float2(box[0, 0, 4], box[0, 0, 5]));
+            var kp2 = MatrixUtils.Mul(M, anchorPosition + new float2(box[0, 0, 6], box[0, 0, 7]));
             var delta = kp2 - kp1;
 
             var theta = math.atan2(delta.y, delta.x);
@@ -126,28 +156,16 @@ namespace WPT
         {
             for (int i = 0; i < NumKeypoints; i++)
             {
-                Vector2 position = MatrixUtils.Mul(M2, new float2(landmarks[(5 * i) + 0], landmarks[(5 * i) + 1]));
-                Vector3 word = (position - (_imageSource.Resolution / 2)) / _imageSource.Resolution.y;
-                word.x += landmarks[(5 * i) + 2] / _imageSource.Resolution.y;
+                Vector2 position_ImageSpace = MatrixUtils.Mul(M2, new float2(landmarks[(5 * i) + 0], landmarks[(5 * i) + 1]));
+                Vector3 position_WorldSpace = new Vector3(
+                    position_ImageSpace.x - (0.5f * _imageSource.Resolution.x),
+                    position_ImageSpace.y - (0.5f * _imageSource.Resolution.y),
+                    landmarks[(5 * i) + 2]) / _imageSource.Resolution.y;
 
-                Keypoints[i] = word;
-            }
-        }
-
-        private void OnDestroy()
-        {
-            _executeAwaitable?.Cancel();
-
-            if (_detectorInput != null)
-            {
-                _detectorInput.Dispose();
-                _detectorInput = null;
-            }
-
-            if (_landmarkerInput != null)
-            {
-                _landmarkerInput.Dispose();
-                _landmarkerInput = null;
+                if (landmarks[(5 * i) + 3] > 0.5f && landmarks[(5 * i) + 4] > 0.5f)
+                {
+                    Keypoints[i] = position_WorldSpace;
+                }
             }
         }
     }

@@ -8,7 +8,6 @@ namespace WPT
 
         [SerializeField] Animator _animator;
         [SerializeField] GameObject _nose;
-        [SerializeField] bool enableDebug = false;
 
         Vector3 _initPosition;
 
@@ -16,8 +15,6 @@ namespace WPT
         float _tall = 224 * 0.75f;
         float _prevTall = 224 * 0.75f;
         float _zScale = 1;
-
-        GameObject[] _points;
 
 
         // Properties
@@ -72,33 +69,6 @@ namespace WPT
         void Update()
         {
             UpdateModel();
-
-            if (enableDebug)
-            {
-                _points ??= new GameObject[(int)BoneIndex.Count];
-
-                for (int i = 0; i < Bones.Length; i++)
-                {
-                    if (_points[i]) continue;
-
-                    var bone = Bones[i];
-
-                    if (bone == null) continue;
-
-                    _points[i] = new GameObject(((BoneIndex)i).ToString());
-                }
-
-                for (int i = 0; i < Bones.Length; i++)
-                {
-                    if (_points[i] == null) continue;
-
-                    var bone = Bones[i];
-
-                    if (bone == null) continue;
-
-                    _points[i].transform.position = bone.Position3D;
-                }
-            }
         }
 
 

@@ -10,10 +10,10 @@ namespace WPT
 
         public RenderTexture Texture => _buffer;
 
-        public Vector2Int Resolution => _resolution;
+        public Vector2 Resolution => _resolution;
 
 
-        // Fields     
+        // Fields
 
         [SerializeField] private ImageSourceType _sourceType = ImageSourceType.Texture;
         [SerializeField] private Texture2D _texture;

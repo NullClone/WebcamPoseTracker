@@ -439,8 +439,8 @@ Transform:
   m_GameObject: {fileID: 957783811}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4, y: 0, z: 0}
-  m_LocalScale: {x: 3, y: 3, z: 3}
+  m_LocalPosition: {x: 0, y: 0, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1814564740}
@@ -540,7 +540,6 @@ GameObject:
   - component: {fileID: 1727122923}
   - component: {fileID: 1727122924}
   - component: {fileID: 1727122925}
-  - component: {fileID: 1727122926}
   m_Layer: 0
   m_Name: InferenceRunner
   m_TagString: Untagged
@@ -575,9 +574,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 583b38ffa85b4b4479fc41864e76da03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _assetLoader: {fileID: 1727122926}
+  _model: {fileID: 11400000, guid: e2a9f9ee1f0b5d342b6c49825424c0ea, type: 2}
   _imageSource: {fileID: 1814564739}
-  _avatar: {fileID: 197647626}
+  _scoreThreshold: 0.75
 --- !u!114 &1727122925
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -592,22 +591,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _parent: {fileID: 1727122923}
   _prefab: {fileID: 1840141004}
---- !u!114 &1727122926
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1727122921}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 54be4c7301aa84549be38ee8443201df, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _detector: {fileID: 5022602860645237092, guid: 296dae8ab858cb04e88edbca990f2af4, type: 3}
-  _landmarker: {fileID: 5022602860645237092, guid: 06ac14cc650eba240a1977d39a38a511, type: 3}
-  _backendType: 256
-  _anchors: {fileID: 4900000, guid: e4eddab5c5d772647a6047cf4dc52745, type: 3}
 --- !u!1 &1739471168
 GameObject:
   m_ObjectHideFlags: 0
