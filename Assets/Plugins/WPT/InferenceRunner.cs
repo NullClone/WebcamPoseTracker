@@ -10,11 +10,9 @@ namespace WPT
     {
         // Properties
 
-        public Vector3[] Keypoints { get; set; } = new Vector3[NumKeypoints];
+        public Vector3[] Positions { get; private set; } = new Vector3[NumKeypoints];
 
-        public const int NumKeypoints = 33;
-        public const int DetectorInputSize = 224;
-        public const int LandmarkerInputSize = 256;
+        public bool[] Actives { get; private set; } = new bool[NumKeypoints];
 
 
         // Fields
@@ -31,24 +29,28 @@ namespace WPT
         private bool _isInitialized;
 
 
+        public const int NumKeypoints = 33;
+        public const int DetectorInputSize = 224;
+        public const int LandmarkerInputSize = 256;
+
+
         // Async Methods
 
         private async void Start()
         {
-            if (_isInitialized)
-            {
-                while (true)
-                {
-                    try
-                    {
-                        _executeAwaitable = ExecuteModel();
+            if (!_isInitialized) return;
 
-                        await _executeAwaitable;
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        break;
-                    }
+            while (true)
+            {
+                try
+                {
+                    _executeAwaitable = ExecuteModel();
+
+                    await _executeAwaitable;
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
                 }
             }
         }
@@ -57,7 +59,7 @@ namespace WPT
         {
             if (_model.DetectorWorker == null || _model.LandmarkerWorker == null) return;
 
-            SetDetectorInput();
+            ImageUtils.SampleImageAffine(_imageSource.Texture, _detectorInput, M);
 
             _model.DetectorWorker.Schedule(_detectorInput);
 
@@ -65,15 +67,19 @@ namespace WPT
             using var outputScore = await (_model.DetectorWorker.PeekOutput(1) as Tensor<float>).ReadbackAndCloneAsync();
             using var outputBox = await (_model.DetectorWorker.PeekOutput(2) as Tensor<float>).ReadbackAndCloneAsync();
 
-            if (outputScore[0] < _scoreThreshold) return;
+            if (outputScore[0] >= _scoreThreshold)
+            {
+                SetLandmarkerInput(outputIdx[0], outputBox);
+            }
+            else return;
 
-            SetLandmarkerInput(outputIdx, outputBox);
+            ImageUtils.SampleImageAffine(_imageSource.Texture, _landmarkerInput, M2);
 
             _model.LandmarkerWorker.Schedule(_landmarkerInput);
 
             using var landmarks = await (_model.LandmarkerWorker.PeekOutput(0) as Tensor<float>).ReadbackAndCloneAsync();
 
-            SetKeypoint(landmarks);
+            SetKeypoints(landmarks);
         }
 
 
@@ -84,6 +90,8 @@ namespace WPT
             if (_model == null || _imageSource == null) return;
 
             _model.Initialize();
+
+            SetDetectorInput();
 
             _detectorInput = new Tensor<float>(new TensorShape(1, DetectorInputSize, DetectorInputSize, 3));
             _landmarkerInput = new Tensor<float>(new TensorShape(1, LandmarkerInputSize, LandmarkerInputSize, 3));
@@ -113,7 +121,6 @@ namespace WPT
             }
         }
 
-
         private void SetDetectorInput()
         {
             var size = Mathf.Max(_imageSource.Resolution.x, _imageSource.Resolution.y);
@@ -125,47 +132,41 @@ namespace WPT
             M = MatrixUtils.Mul(
                 MatrixUtils.TranslationMatrix(delta),
                 MatrixUtils.ScaleMatrix(scale, -scale));
-
-            ImageUtils.SampleImageAffine(_imageSource.Texture, _detectorInput, M);
         }
 
-        private void SetLandmarkerInput(Tensor<int> idx, Tensor<float> box)
+        private void SetLandmarkerInput(int idx, Tensor<float> box)
         {
-            var anchorPosition = DetectorInputSize * new float2(_model.Anchors[idx[0], 0], _model.Anchors[idx[0], 1]);
+            var anchorPosition = DetectorInputSize * new float2(_model.Anchors[idx, 0], _model.Anchors[idx, 1]);
 
             var kp1 = MatrixUtils.Mul(M, anchorPosition + new float2(box[0, 0, 4], box[0, 0, 5]));
             var kp2 = MatrixUtils.Mul(M, anchorPosition + new float2(box[0, 0, 6], box[0, 0, 7]));
             var delta = kp2 - kp1;
 
-            var theta = math.atan2(delta.y, delta.x);
-            var origin = new float2(0.5f * LandmarkerInputSize, 0.5f * LandmarkerInputSize);
-            var scale = 1.25f * math.length(delta) / (0.5f * LandmarkerInputSize);
+            var halfInputSize = 0.5f * LandmarkerInputSize;
+            var scale = 1.25f * math.length(delta) / halfInputSize;
+            var theta = (0.5f * Mathf.PI) - math.atan2(delta.y, delta.x);
 
-            var f1 = MatrixUtils.Mul(
-                        MatrixUtils.TranslationMatrix(kp1),
-                        MatrixUtils.ScaleMatrix(scale, -scale));
-
-            var f2 = MatrixUtils.Mul(f1, MatrixUtils.RotationMatrix((0.5f * Mathf.PI) - theta));
-
-            M2 = MatrixUtils.Mul(f2, MatrixUtils.TranslationMatrix(-origin));
-
-            ImageUtils.SampleImageAffine(_imageSource.Texture, _landmarkerInput, M2);
+            M2 = MatrixUtils.Mul(
+                     MatrixUtils.Mul(
+                         MatrixUtils.Mul(
+                             MatrixUtils.TranslationMatrix(kp1),
+                             MatrixUtils.ScaleMatrix(scale, -scale)),
+                         MatrixUtils.RotationMatrix(theta)),
+                     MatrixUtils.TranslationMatrix(-new float2(halfInputSize, halfInputSize)));
         }
 
-        private void SetKeypoint(Tensor<float> landmarks)
+        private void SetKeypoints(Tensor<float> landmarks)
         {
             for (int i = 0; i < NumKeypoints; i++)
             {
-                Vector2 position_ImageSpace = MatrixUtils.Mul(M2, new float2(landmarks[(5 * i) + 0], landmarks[(5 * i) + 1]));
-                Vector3 position_WorldSpace = new Vector3(
-                    position_ImageSpace.x - (0.5f * _imageSource.Resolution.x),
-                    position_ImageSpace.y - (0.5f * _imageSource.Resolution.y),
+                var ImageSpacePosition = MatrixUtils.Mul(M2, new float2(landmarks[(5 * i) + 0], landmarks[(5 * i) + 1]));
+
+                Positions[i] = new Vector3(
+                    ImageSpacePosition.x - (0.5f * _imageSource.Resolution.x),
+                    ImageSpacePosition.y - (0.5f * _imageSource.Resolution.y),
                     landmarks[(5 * i) + 2]) / _imageSource.Resolution.y;
 
-                if (landmarks[(5 * i) + 3] > 0.5f && landmarks[(5 * i) + 4] > 0.5f)
-                {
-                    Keypoints[i] = position_WorldSpace;
-                }
+                Actives[i] = landmarks[(5 * i) + 3] >= 0.5f && landmarks[(5 * i) + 4] >= 0.5f;
             }
         }
     }

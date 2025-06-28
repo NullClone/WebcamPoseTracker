@@ -6,11 +6,9 @@ namespace WPT
     {
         // Fields
 
-        [SerializeField] private Transform _parent;
-        [SerializeField] private GameObject _prefab;
+        [SerializeField] private Keypoint[] _keypoints;
 
         private InferenceRunner _inferenceRunner;
-        private GameObject[] _keypoints;
 
 
         // Methods
@@ -22,21 +20,16 @@ namespace WPT
 
         private void Update()
         {
-            if (_inferenceRunner == null) return;
+            if (_inferenceRunner == null || _keypoints == null) return;
 
-            if (_keypoints == null)
+            if (_keypoints.Length == InferenceRunner.NumKeypoints)
             {
-                _keypoints = new GameObject[InferenceRunner.NumKeypoints];
-
                 for (int i = 0; i < _keypoints.Length; i++)
                 {
-                    _keypoints[i] = Instantiate(_prefab, _parent);
+                    _keypoints[i].SetValue(
+                        _inferenceRunner.Positions[i],
+                        _inferenceRunner.Actives[i]);
                 }
-            }
-
-            for (int i = 0; i < _keypoints.Length; i++)
-            {
-                _keypoints[i].transform.localPosition = _inferenceRunner.Keypoints[i];
             }
         }
     }
