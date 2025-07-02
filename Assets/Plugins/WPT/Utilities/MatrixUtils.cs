@@ -1,9 +1,38 @@
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace WPT.Utilities
 {
     public static class MatrixUtils
     {
+        public static Quaternion LookRotation(Vector3 forward)
+        {
+            if (forward == Vector3.zero)
+            {
+                return Quaternion.identity;
+            }
+
+            return Quaternion.LookRotation(forward);
+        }
+
+        public static Quaternion LookRotation(Vector3 forward, Vector3 upwards)
+        {
+            if (forward == Vector3.zero)
+            {
+                return Quaternion.identity;
+            }
+
+            return Quaternion.LookRotation(forward, upwards);
+        }
+
+        public static Vector3 TriangleNormal(Vector3 a, Vector3 b, Vector3 c)
+        {
+            var result = Vector3.Cross(a - b, a - c);
+
+            return result.normalized;
+        }
+
+
         public static float2x3 Mul(float2x3 a, float2x3 b)
         {
             return new float2x3(

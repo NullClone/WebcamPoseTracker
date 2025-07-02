@@ -1,4 +1,5 @@
 using UnityEngine;
+using WPT.Utilities;
 
 namespace WPT
 {
@@ -6,306 +7,244 @@ namespace WPT
     {
         // Fields
 
-        [SerializeField] Animator _animator;
-        [SerializeField] GameObject _nose;
+        [SerializeField] private InferenceRunner _runner;
+        [SerializeField] private Vector3 _hipOffset;
+        [SerializeField] private Vector3 _neckOffset;
 
-        Vector3 _initPosition;
-
-        float _centerTall = 224 * 0.75f;
-        float _tall = 224 * 0.75f;
-        float _prevTall = 224 * 0.75f;
-        float _zScale = 1;
+        private Animator _animator;
+        private Vector3 _initPosition;
+        private bool _isInitialized;
 
 
         // Properties
 
-        public Bone[] Bones { get; private set; }
+        public Bone[] Bones { get; set; }
 
-        public bool IsReady { get; private set; }
+        public Bone Hips { get; set; }
+
+        public Bone Spine { get; set; }
+
+        public Bone Neck { get; set; }
 
 
         // Methods
 
-        public void SetBones(Vector3[] position)
+        private void Start()
         {
-            if (IsReady == false || position == null) return;
+            _animator = gameObject.GetComponent<Animator>();
 
-            if (position.Length == Bones.Length)
-            {
-                for (int i = 0; i < position.Length; i++)
-                {
-                    Bones[i].Position3D = position[i];
-                }
-            }
+            if (_animator == null || _runner == null) return;
+
+            Initialize();
         }
 
-
-        void Awake()
+        private void Update()
         {
-            if (_animator == null)
-            {
-                _animator = gameObject.GetComponent<Animator>();
-            }
+            if (!_isInitialized) return;
 
-            Bones = new Bone[(int)BoneIndex.Count];
+            SetPosition();
 
-            for (int i = 0; i < (int)BoneIndex.Count; i++)
-            {
-                Bones[i] = new Bone();
-            }
-
-            IsReady = true;
-        }
-
-        void Start()
-        {
-            if (_animator == null || _nose == null) return;
-
-            SetBone();
-            SetChildBone();
-            SetInverse();
-        }
-
-        void Update()
-        {
             UpdateModel();
         }
 
-
-        void SetBone()
+        private void Initialize()
         {
-            // Right Arm
-            Bones[(int)BoneIndex.RightShoulderBend].Transform = _animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
-            Bones[(int)BoneIndex.RightForearmBend].Transform = _animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
-            Bones[(int)BoneIndex.RightHand].Transform = _animator.GetBoneTransform(HumanBodyBones.RightHand);
-            Bones[(int)BoneIndex.RightThumb2].Transform = _animator.GetBoneTransform(HumanBodyBones.RightThumbIntermediate);
-            Bones[(int)BoneIndex.RightMid1].Transform = _animator.GetBoneTransform(HumanBodyBones.RightMiddleProximal);
+            Bones = new Bone[(int)BoneIndex.Count];
 
-            // Left Arm
-            Bones[(int)BoneIndex.LeftShoulderBend].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
-            Bones[(int)BoneIndex.LeftForearmBend].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
-            Bones[(int)BoneIndex.LeftHand].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftHand);
-            Bones[(int)BoneIndex.LeftThumb2].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftThumbIntermediate);
-            Bones[(int)BoneIndex.LeftMid1].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftMiddleProximal);
-
-            // Face
-            Bones[(int)BoneIndex.LeftEar].Transform = _animator.GetBoneTransform(HumanBodyBones.Head);
-            Bones[(int)BoneIndex.LeftEye].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftEye);
-            Bones[(int)BoneIndex.RightEar].Transform = _animator.GetBoneTransform(HumanBodyBones.Head);
-            Bones[(int)BoneIndex.RightEye].Transform = _animator.GetBoneTransform(HumanBodyBones.RightEye);
-            Bones[(int)BoneIndex.Nose].Transform = _nose.transform;
-
-            // Right Leg
-            Bones[(int)BoneIndex.RightThighBend].Transform = _animator.GetBoneTransform(HumanBodyBones.RightUpperLeg);
-            Bones[(int)BoneIndex.RightShin].Transform = _animator.GetBoneTransform(HumanBodyBones.RightLowerLeg);
-            Bones[(int)BoneIndex.RightFoot].Transform = _animator.GetBoneTransform(HumanBodyBones.RightFoot);
-            Bones[(int)BoneIndex.RightToe].Transform = _animator.GetBoneTransform(HumanBodyBones.RightToes);
-
-            // Left Leg
-            Bones[(int)BoneIndex.LeftThighBend].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
-            Bones[(int)BoneIndex.LeftShin].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg);
-            Bones[(int)BoneIndex.LeftFoot].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftFoot);
-            Bones[(int)BoneIndex.LeftToe].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftToes);
-
-            // Etc
-            Bones[(int)BoneIndex.AbdomenUpper].Transform = _animator.GetBoneTransform(HumanBodyBones.Spine);
-            Bones[(int)BoneIndex.Hip].Transform = _animator.GetBoneTransform(HumanBodyBones.Hips);
-            Bones[(int)BoneIndex.Head].Transform = _animator.GetBoneTransform(HumanBodyBones.Head);
-            Bones[(int)BoneIndex.Neck].Transform = _animator.GetBoneTransform(HumanBodyBones.Neck);
-            Bones[(int)BoneIndex.Spine].Transform = _animator.GetBoneTransform(HumanBodyBones.Spine);
-        }
-
-        void SetChildBone()
-        {
-            // Right Arm
-            Bones[(int)BoneIndex.RightShoulderBend].Child = Bones[(int)BoneIndex.RightForearmBend];
-            Bones[(int)BoneIndex.RightForearmBend].Child = Bones[(int)BoneIndex.RightHand];
-            Bones[(int)BoneIndex.RightForearmBend].Parent = Bones[(int)BoneIndex.RightShoulderBend];
-
-            // Left Arm
-            Bones[(int)BoneIndex.LeftShoulderBend].Child = Bones[(int)BoneIndex.LeftForearmBend];
-            Bones[(int)BoneIndex.LeftForearmBend].Child = Bones[(int)BoneIndex.LeftHand];
-            Bones[(int)BoneIndex.LeftForearmBend].Parent = Bones[(int)BoneIndex.LeftShoulderBend];
-
-            // Right Leg
-            Bones[(int)BoneIndex.RightThighBend].Child = Bones[(int)BoneIndex.RightShin];
-            Bones[(int)BoneIndex.RightShin].Child = Bones[(int)BoneIndex.RightFoot];
-            Bones[(int)BoneIndex.RightFoot].Child = Bones[(int)BoneIndex.RightToe];
-            Bones[(int)BoneIndex.RightFoot].Parent = Bones[(int)BoneIndex.RightShin];
-
-            // Left Leg
-            Bones[(int)BoneIndex.LeftThighBend].Child = Bones[(int)BoneIndex.LeftShin];
-            Bones[(int)BoneIndex.LeftShin].Child = Bones[(int)BoneIndex.LeftFoot];
-            Bones[(int)BoneIndex.LeftFoot].Child = Bones[(int)BoneIndex.LeftToe];
-            Bones[(int)BoneIndex.LeftFoot].Parent = Bones[(int)BoneIndex.LeftShin];
-
-            // Etc
-            Bones[(int)BoneIndex.Spine].Child = Bones[(int)BoneIndex.Neck];
-            Bones[(int)BoneIndex.Neck].Child = Bones[(int)BoneIndex.Head];
-            Bones[(int)BoneIndex.Head].Child = Bones[(int)BoneIndex.Nose];
-        }
-
-        void SetInverse()
-        {
-            var forward = TriangleNormal(
-                Bones[(int)BoneIndex.Hip].Transform.position,
-                Bones[(int)BoneIndex.LeftThighBend].Transform.position,
-                Bones[(int)BoneIndex.RightThighBend].Transform.position);
-
-            foreach (var bone in Bones)
+            for (int i = 0; i < Bones.Length; i++)
             {
-                if (bone.Transform != null)
-                {
-                    bone.InitRotation = bone.Transform.rotation;
-                }
-
-                if (bone.Child != null)
-                {
-                    var rotation = Quaternion.LookRotation(bone.Transform.position - bone.Child.Transform.position, forward);
-
-                    bone.Inverse = Quaternion.Inverse(rotation);
-                    bone.InverseRotation = bone.Inverse * bone.InitRotation;
-                }
+                Bones[i] = new();
             }
 
-            // Hip
-            var hip = Bones[(int)BoneIndex.Hip];
+            Hips = new();
+            Spine = new();
+            Neck = new();
 
-            _initPosition = hip.Transform.position;
+            GetBone();
+            SetBone();
+            SetInverse();
 
-            hip.Inverse = Quaternion.Inverse(Quaternion.LookRotation(forward));
-            hip.InverseRotation = hip.Inverse * hip.InitRotation;
+            _isInitialized = true;
+        }
+
+        private void GetBone()
+        {
+            // Body
+
+            Hips.Transform = _animator.GetBoneTransform(HumanBodyBones.Hips);
+            Spine.Transform = _animator.GetBoneTransform(HumanBodyBones.Spine);
+            Neck.Transform = _animator.GetBoneTransform(HumanBodyBones.Neck);
+
+
+            // Left Arm
+
+            Bones[(int)BoneIndex.LeftShoulder].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
+            Bones[(int)BoneIndex.LeftElbow].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
+            Bones[(int)BoneIndex.LeftWrist].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftHand);
+
+
+            // Right Arm
+
+            Bones[(int)BoneIndex.RightShoulder].Transform = _animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
+            Bones[(int)BoneIndex.RightElbow].Transform = _animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
+            Bones[(int)BoneIndex.RightWrist].Transform = _animator.GetBoneTransform(HumanBodyBones.RightHand);
+
+
+            // Left Leg
+
+            Bones[(int)BoneIndex.LeftHip].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
+            Bones[(int)BoneIndex.LeftKnee].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg);
+            Bones[(int)BoneIndex.LeftAnkle].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftFoot);
+
+
+            // Right Leg
+
+            Bones[(int)BoneIndex.RightHip].Transform = _animator.GetBoneTransform(HumanBodyBones.RightUpperLeg);
+            Bones[(int)BoneIndex.RightKnee].Transform = _animator.GetBoneTransform(HumanBodyBones.RightLowerLeg);
+            Bones[(int)BoneIndex.RightAnkle].Transform = _animator.GetBoneTransform(HumanBodyBones.RightFoot);
 
 
             // Head
-            var head = Bones[(int)BoneIndex.Head];
 
-            head.InitRotation = head.Transform.rotation;
-            head.Inverse = Quaternion.Inverse(Quaternion.LookRotation(Bones[(int)BoneIndex.Nose].Transform.position - head.Transform.position));
-            head.InverseRotation = head.Inverse * head.InitRotation;
-
-
-            // Left Hand
-            var leftHand = Bones[(int)BoneIndex.LeftHand];
-            var leftMid1 = Bones[(int)BoneIndex.LeftMid1];
-            var leftThumb2 = Bones[(int)BoneIndex.LeftThumb2];
-
-            var lf = TriangleNormal(leftHand.Position3D, leftMid1.Position3D, leftThumb2.Position3D);
-
-            leftHand.InitRotation = leftHand.Transform.rotation;
-            leftHand.Inverse = Quaternion.Inverse(Quaternion.LookRotation(leftThumb2.Transform.position - leftMid1.Transform.position, lf));
-            leftHand.InverseRotation = leftHand.Inverse * leftHand.InitRotation;
-
-            // Right Hand
-            var rightHand = Bones[(int)BoneIndex.RightHand];
-            var rightMid1 = Bones[(int)BoneIndex.RightMid1];
-            var rightThumb2 = Bones[(int)BoneIndex.RightThumb2];
-
-            var rf = TriangleNormal(rightHand.Position3D, rightMid1.Position3D, rightThumb2.Position3D);
-
-            rightHand.InitRotation = rightHand.Transform.rotation;
-            rightHand.Inverse = Quaternion.Inverse(Quaternion.LookRotation(rightThumb2.Transform.position - rightMid1.Transform.position, rf));
-            rightHand.InverseRotation = rightHand.Inverse * rightHand.InitRotation;
-
-            Bones[(int)BoneIndex.Hip].score = 1f;
-            Bones[(int)BoneIndex.Neck].score = 1f;
-            Bones[(int)BoneIndex.Nose].score = 1f;
-            Bones[(int)BoneIndex.Head].score = 1f;
-            Bones[(int)BoneIndex.Spine].score = 1f;
+            Bones[(int)BoneIndex.Nose].Transform = _animator.GetBoneTransform(HumanBodyBones.Head);
         }
 
-        void UpdateModel()
+        private void SetBone()
         {
-            var t1 = Vector3.Distance(
-                Bones[(int)BoneIndex.Head].Position3D,
-                Bones[(int)BoneIndex.Neck].Position3D);
-            var t2 = Vector3.Distance(
-                Bones[(int)BoneIndex.Neck].Position3D,
-                Bones[(int)BoneIndex.Spine].Position3D);
-            var pm = (
-                Bones[(int)BoneIndex.RightThighBend].Position3D +
-                Bones[(int)BoneIndex.LeftThighBend].Position3D) / 2f;
-            var t3 = Vector3.Distance(Bones[(int)BoneIndex.Spine].Position3D, pm);
-            var t4r = Vector3.Distance(
-                Bones[(int)BoneIndex.RightThighBend].Position3D,
-                Bones[(int)BoneIndex.RightShin].Position3D);
-            var t4l = Vector3.Distance(
-                Bones[(int)BoneIndex.LeftThighBend].Position3D,
-                Bones[(int)BoneIndex.LeftShin].Position3D);
-            var t4 = (t4r + t4l) / 2f;
-            var t5r = Vector3.Distance(
-                Bones[(int)BoneIndex.RightShin].Position3D,
-                Bones[(int)BoneIndex.RightFoot].Position3D);
-            var t5l = Vector3.Distance(
-                Bones[(int)BoneIndex.LeftShin].Position3D,
-                Bones[(int)BoneIndex.LeftFoot].Position3D);
-            var t5 = (t5r + t5l) / 2f;
-            var t = t1 + t2 + t3 + t4 + t5;
+            // Left Arm
 
-            _tall = (t * 0.7f) + (_prevTall * 0.3f);
-            _prevTall = _tall;
+            Bones[(int)BoneIndex.LeftShoulder].Child = Bones[(int)BoneIndex.LeftElbow];
+            Bones[(int)BoneIndex.LeftElbow].Child = Bones[(int)BoneIndex.LeftWrist];
+            Bones[(int)BoneIndex.LeftElbow].Parent = Bones[(int)BoneIndex.LeftElbow];
 
-            if (_tall == 0) _tall = _centerTall;
 
-            var dz = (_centerTall - _tall) / _centerTall * _zScale;
+            // Right Arm
 
-            var forward = TriangleNormal(
-                Bones[(int)BoneIndex.Hip].Position3D,
-                Bones[(int)BoneIndex.LeftThighBend].Position3D,
-                Bones[(int)BoneIndex.RightThighBend].Position3D);
+            Bones[(int)BoneIndex.RightShoulder].Child = Bones[(int)BoneIndex.RightElbow];
+            Bones[(int)BoneIndex.RightElbow].Child = Bones[(int)BoneIndex.RightWrist];
+            Bones[(int)BoneIndex.RightElbow].Parent = Bones[(int)BoneIndex.RightElbow];
 
-            Bones[(int)BoneIndex.Hip].Transform.position = (Bones[(int)BoneIndex.Hip].Position3D * 0.005f) + new Vector3(_initPosition.x, _initPosition.y, _initPosition.z + dz);
-            Bones[(int)BoneIndex.Hip].Transform.rotation = Quaternion.LookRotation(forward) * Bones[(int)BoneIndex.Hip].InverseRotation;
+
+            // Left Leg
+
+            Bones[(int)BoneIndex.LeftHip].Child = Bones[(int)BoneIndex.LeftKnee];
+            Bones[(int)BoneIndex.LeftKnee].Child = Bones[(int)BoneIndex.LeftAnkle];
+            Bones[(int)BoneIndex.LeftAnkle].Child = Bones[(int)BoneIndex.LeftHeel];
+            Bones[(int)BoneIndex.LeftAnkle].Parent = Bones[(int)BoneIndex.LeftKnee];
+
+
+            // Right Leg
+
+            Bones[(int)BoneIndex.RightHip].Child = Bones[(int)BoneIndex.RightKnee];
+            Bones[(int)BoneIndex.RightKnee].Child = Bones[(int)BoneIndex.RightAnkle];
+            Bones[(int)BoneIndex.RightAnkle].Child = Bones[(int)BoneIndex.RightHeel];
+            Bones[(int)BoneIndex.RightAnkle].Parent = Bones[(int)BoneIndex.RightKnee];
+        }
+
+        private void SetInverse()
+        {
+            var forward = MatrixUtils.TriangleNormal(
+                Hips.Transform.position,
+                Bones[(int)BoneIndex.LeftHip].Transform.position,
+                Bones[(int)BoneIndex.RightHip].Transform.position);
+
+            foreach (var bone in Bones)
+            {
+                if (bone.Transform == null) continue;
+
+                bone.Rotation = bone.Transform.rotation;
+
+                if (bone.Child != null && bone.Child.Transform != null)
+                {
+                    bone.Inverse = Quaternion.Inverse(
+                        MatrixUtils.LookRotation(
+                            bone.Transform.position -
+                            bone.Child.Transform.position, forward));
+                    bone.InverseRotation = bone.Inverse * bone.Rotation;
+                }
+            }
+
+            Hips.Rotation = Hips.Transform.rotation;
+            Spine.Rotation = Hips.Transform.rotation;
+            Neck.Rotation = Neck.Transform.rotation;
+
+            _initPosition = Hips.Transform.position;
+
+            Hips.Inverse = Quaternion.Inverse(MatrixUtils.LookRotation(forward));
+            Hips.InverseRotation = Hips.Inverse * Hips.Rotation;
+        }
+
+        private void SetPosition()
+        {
+            for (int i = 0; i < Bones.Length; i++)
+            {
+                Bones[i].Position = _runner.Positions[i];
+            }
+
+            Hips.Position = (
+                Bones[(int)BoneIndex.LeftHip].Position +
+                Bones[(int)BoneIndex.RightHip].Position) / 2f;
+
+            Hips.Position += _hipOffset;
+
+            var chest = (
+                Bones[(int)BoneIndex.LeftShoulder].Position +
+                Bones[(int)BoneIndex.RightShoulder].Position) / 2f;
+
+            Neck.Position = chest + _neckOffset;
+
+            Spine.Position = (chest + Hips.Position) / 2f;
+        }
+
+        private void UpdateModel()
+        {
+            var forward = MatrixUtils.TriangleNormal(
+                Hips.Position,
+                Bones[(int)BoneIndex.LeftHip].Position,
+                Bones[(int)BoneIndex.RightHip].Position);
 
             foreach (var bone in Bones)
             {
                 if (bone.Parent != null)
                 {
-                    bone.Transform.rotation = Quaternion.LookRotation(
-                        bone.Position3D - bone.Child.Position3D,
-                        bone.Parent.Position3D - bone.Position3D) * bone.InverseRotation;
+                    bone.Transform.rotation = MatrixUtils.LookRotation(
+                        bone.Position - bone.Child.Position,
+                        bone.Parent.Position - bone.Position) * bone.InverseRotation;
                 }
                 else if (bone.Child != null)
                 {
-                    bone.Transform.rotation = Quaternion.LookRotation(
-                        bone.Position3D - bone.Child.Position3D, forward) * bone.InverseRotation;
+                    bone.Transform.rotation = MatrixUtils.LookRotation(
+                        bone.Position - bone.Child.Position, forward) * bone.InverseRotation;
                 }
             }
 
-            // Head Rotation
-            var gaze = Bones[(int)BoneIndex.Nose].Position3D - Bones[(int)BoneIndex.Head].Position3D;
+            /*
 
-            var f = TriangleNormal(
-                Bones[(int)BoneIndex.Nose].Position3D,
-                Bones[(int)BoneIndex.RightEar].Position3D,
-                Bones[(int)BoneIndex.LeftEar].Position3D);
+            var t1 = Vector3.Distance(Bones[(int)BoneIndex.Nose].Position, Neck.Position);
+            var t2 = Vector3.Distance(Neck.Position, Spine.Position);
+            var pm = (Bones[(int)BoneIndex.RightShoulder].Position + Bones[(int)BoneIndex.LeftShoulder].Position) / 2f;
+            var t3 = Vector3.Distance(Spine.Position, pm);
+            var t4r = Vector3.Distance(Bones[(int)BoneIndex.RightHip].Position, Bones[(int)BoneIndex.RightKnee].Position);
+            var t4l = Vector3.Distance(Bones[(int)BoneIndex.LeftHip].Position, Bones[(int)BoneIndex.LeftKnee].Position);
+            var t4 = (t4r + t4l) / 2f;
+            var t5r = Vector3.Distance(Bones[(int)BoneIndex.RightKnee].Position, Bones[(int)BoneIndex.RightAnkle].Position);
+            var t5l = Vector3.Distance(Bones[(int)BoneIndex.LeftKnee].Position, Bones[(int)BoneIndex.LeftAnkle].Position);
+            var t5 = (t5r + t5l) / 2f;
+            var t = t1 + t2 + t3 + t4 + t5;
 
-            var head = Bones[(int)BoneIndex.Head];
+            tall = (t * 0.7f) + (prevTall * 0.3f);
+            prevTall = tall;
 
-            head.Transform.rotation = Quaternion.LookRotation(gaze, f) * head.InverseRotation;
+            if (tall == 0)
+            {
+                tall = centerTall;
+            }
 
-            // Wrist Rotation
-            var lHand = Bones[(int)BoneIndex.LeftHand];
-            var lf = TriangleNormal(lHand.Position3D,
-                Bones[(int)BoneIndex.LeftMid1].Position3D,
-                Bones[(int)BoneIndex.LeftThumb2].Position3D);
-            lHand.Transform.rotation = Quaternion.LookRotation(Bones[(int)BoneIndex.LeftThumb2].Position3D - Bones[(int)BoneIndex.LeftMid1].Position3D, lf) * lHand.InverseRotation;
+            float dz = (centerTall - tall) / centerTall * zScale;
+            */
 
-            var rHand = Bones[(int)BoneIndex.RightHand];
-            var rf = TriangleNormal(
-                rHand.Position3D,
-                Bones[(int)BoneIndex.RightThumb2].Position3D,
-                Bones[(int)BoneIndex.RightMid1].Position3D);
-            rHand.Transform.rotation = Quaternion.LookRotation(Bones[(int)BoneIndex.RightThumb2].Position3D - Bones[(int)BoneIndex.RightMid1].Position3D, rf) * rHand.InverseRotation;
-        }
-
-
-        Vector3 TriangleNormal(Vector3 a, Vector3 b, Vector3 c)
-        {
-            var result = Vector3.Cross(a - b, a - c);
-            result.Normalize();
-
-            return result;
+            Hips.Transform.position = (Hips.Position * 0.05f) + new Vector3(_initPosition.x, _initPosition.y, _initPosition.z);
+            Hips.Transform.rotation = MatrixUtils.LookRotation(forward) * Hips.InverseRotation;
         }
     }
 }

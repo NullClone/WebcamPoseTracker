@@ -891,18 +891,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 197647625}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 189ff5bade5909540ad0e953ef3bc4e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _animator: {fileID: 197647627}
-  _nose: {fileID: 0}
---- !u!95 &197647627 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: f103899748329a345826dc656a03df38, type: 3}
-  m_PrefabInstance: {fileID: 342345244}
-  m_PrefabAsset: {fileID: 0}
+  _runner: {fileID: 1727122924}
+  _hipOffset: {x: 0, y: 0.1, z: 0}
+  _neckOffset: {x: 0, y: 0.1, z: 0}
 --- !u!1001 &234136730
 PrefabInstance:
   m_ObjectHideFlags: 0
