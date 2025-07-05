@@ -12,6 +12,7 @@ Desktop.ini
 /*.csproj
 /*.sln
 *.swp
+*.vsconfig
 *.vcxproj.user
 
 # Unity
