@@ -129,7 +129,7 @@ namespace WPT
 
             var delta = 0.5f * (_imageSource.Resolution + new Vector2(-size, size));
 
-            M = MatrixUtils.Mul(
+            M = MatrixUtils.Multiply(
                 MatrixUtils.TranslationMatrix(delta),
                 MatrixUtils.ScaleMatrix(scale, -scale));
         }
@@ -138,17 +138,17 @@ namespace WPT
         {
             var anchorPosition = DetectorInputSize * new float2(_model.Anchors[idx, 0], _model.Anchors[idx, 1]);
 
-            var kp1 = MatrixUtils.Mul(M, anchorPosition + new float2(box[0, 0, 4], box[0, 0, 5]));
-            var kp2 = MatrixUtils.Mul(M, anchorPosition + new float2(box[0, 0, 6], box[0, 0, 7]));
+            var kp1 = MatrixUtils.Multiply(M, anchorPosition + new float2(box[0, 0, 4], box[0, 0, 5]));
+            var kp2 = MatrixUtils.Multiply(M, anchorPosition + new float2(box[0, 0, 6], box[0, 0, 7]));
             var delta = kp2 - kp1;
 
             var halfInputSize = 0.5f * LandmarkerInputSize;
             var scale = 1.25f * math.length(delta) / halfInputSize;
             var theta = (0.5f * Mathf.PI) - math.atan2(delta.y, delta.x);
 
-            M2 = MatrixUtils.Mul(
-                     MatrixUtils.Mul(
-                         MatrixUtils.Mul(
+            M2 = MatrixUtils.Multiply(
+                     MatrixUtils.Multiply(
+                         MatrixUtils.Multiply(
                              MatrixUtils.TranslationMatrix(kp1),
                              MatrixUtils.ScaleMatrix(scale, -scale)),
                          MatrixUtils.RotationMatrix(theta)),
@@ -159,7 +159,7 @@ namespace WPT
         {
             for (int i = 0; i < NumKeypoints; i++)
             {
-                var ImageSpacePosition = MatrixUtils.Mul(M2, new float2(landmarks[(5 * i) + 0], landmarks[(5 * i) + 1]));
+                var ImageSpacePosition = MatrixUtils.Multiply(M2, new float2(landmarks[(5 * i) + 0], landmarks[(5 * i) + 1]));
 
                 Positions[i] = new Vector3(
                     ImageSpacePosition.x - (0.5f * _imageSource.Resolution.x),

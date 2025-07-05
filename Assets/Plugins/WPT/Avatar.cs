@@ -111,6 +111,9 @@ namespace WPT
 
         private void SetBone()
         {
+            // Body
+
+
             // Left Arm
 
             Bones[(int)BoneIndex.LeftShoulder].Child = Bones[(int)BoneIndex.LeftElbow];
@@ -152,7 +155,7 @@ namespace WPT
             {
                 if (bone.Transform == null) continue;
 
-                bone.Rotation = bone.Transform.rotation;
+                bone.InitRotation = bone.Transform.rotation;
 
                 if (bone.Child != null && bone.Child.Transform != null)
                 {
@@ -160,18 +163,18 @@ namespace WPT
                         MatrixUtils.LookRotation(
                             bone.Transform.position -
                             bone.Child.Transform.position, forward));
-                    bone.InverseRotation = bone.Inverse * bone.Rotation;
+                    bone.InverseRotation = bone.Inverse * bone.InitRotation;
                 }
             }
 
-            Hips.Rotation = Hips.Transform.rotation;
-            Spine.Rotation = Hips.Transform.rotation;
-            Neck.Rotation = Neck.Transform.rotation;
+            Hips.InitRotation = Hips.Transform.rotation;
+            Spine.InitRotation = Hips.Transform.rotation;
+            Neck.InitRotation = Neck.Transform.rotation;
 
             _initPosition = Hips.Transform.position;
 
             Hips.Inverse = Quaternion.Inverse(MatrixUtils.LookRotation(forward));
-            Hips.InverseRotation = Hips.Inverse * Hips.Rotation;
+            Hips.InverseRotation = Hips.Inverse * Hips.InitRotation;
         }
 
         private void SetPosition()
@@ -243,7 +246,16 @@ namespace WPT
             float dz = (centerTall - tall) / centerTall * zScale;
             */
 
-            Hips.Transform.position = (Hips.Position * 0.05f) + new Vector3(_initPosition.x, _initPosition.y, _initPosition.z);
+            var chest = (
+                Bones[(int)BoneIndex.LeftShoulder].Position +
+                Bones[(int)BoneIndex.RightShoulder].Position) / 2f;
+
+            Spine.Transform.rotation = MatrixUtils.LookRotation(
+                        Spine.Position - Hips.Position,
+                        chest - Spine.Position) * Spine.InverseRotation;
+
+
+            Hips.Transform.position = (Hips.Position * 0.005f) + new Vector3(_initPosition.x, _initPosition.y, _initPosition.z);
             Hips.Transform.rotation = MatrixUtils.LookRotation(forward) * Hips.InverseRotation;
         }
     }

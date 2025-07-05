@@ -112,7 +112,6 @@ namespace WPT
                             _videoPlayer.clip = _video;
                         }
 
-                        _videoPlayer.renderMode = VideoRenderMode.APIOnly;
                         _videoPlayer.Play();
 
                         break;

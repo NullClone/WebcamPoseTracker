@@ -33,7 +33,7 @@ namespace WPT.Utilities
         }
 
 
-        public static float2x3 Mul(float2x3 a, float2x3 b)
+        public static float2x3 Multiply(float2x3 a, float2x3 b)
         {
             return new float2x3(
                 (a[0][0] * b[0][0]) + (a[1][0] * b[0][1]),
@@ -45,7 +45,7 @@ namespace WPT.Utilities
             );
         }
 
-        public static float2 Mul(float2x3 a, float2 b)
+        public static float2 Multiply(float2x3 a, float2 b)
         {
             return new float2(
                 (a[0][0] * b.x) + (a[1][0] * b.y) + a[2][0],

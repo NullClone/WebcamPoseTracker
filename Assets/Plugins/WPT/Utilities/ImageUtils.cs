@@ -9,7 +9,6 @@ namespace WPT.Utilities
         // Fields
 
         private static readonly ComputeShader _shader = (ComputeShader)Resources.Load("ImageTransform");
-
         private static readonly int ImageSample = _shader.FindKernel("ImageSample");
         private static readonly int Optr = Shader.PropertyToID("Optr");
         private static readonly int X_tex2D = Shader.PropertyToID("X_tex2D");
@@ -25,7 +24,7 @@ namespace WPT.Utilities
 
         public static void SampleImageAffine(Texture srcTexture, Tensor<float> dstTensor, float2x3 M)
         {
-            if (_shader == null) return;
+            if (srcTexture == null || dstTensor == null) return;
 
             var tensorData = ComputeTensorData.Pin(dstTensor, false);
 
@@ -53,7 +52,7 @@ namespace WPT.Utilities
 
         public static void TextureBlit(Texture srcTexture, RenderTexture dstTexture, bool vflip = false)
         {
-            if (srcTexture == null) return;
+            if (srcTexture == null || dstTexture == null) return;
 
             var aspect1 = (float)srcTexture.width / srcTexture.height;
             var aspect2 = (float)dstTexture.width / dstTexture.height;
