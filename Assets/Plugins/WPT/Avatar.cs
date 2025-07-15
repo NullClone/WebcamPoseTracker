@@ -14,17 +14,7 @@ namespace WPT
         private Animator _animator;
         private Vector3 _initPosition;
         private bool _isInitialized;
-
-
-        // Properties
-
-        public Bone[] Bones { get; set; }
-
-        public Bone Hips { get; set; }
-
-        public Bone Spine { get; set; }
-
-        public Bone Neck { get; set; }
+        private Bone[] Bones;
 
 
         // Methods
@@ -56,24 +46,12 @@ namespace WPT
                 Bones[i] = new();
             }
 
-            Hips = new();
-            Spine = new();
-            Neck = new();
+            #region GetBone
 
-            GetBone();
-            SetBone();
-            SetInverse();
-
-            _isInitialized = true;
-        }
-
-        private void GetBone()
-        {
             // Body
 
-            Hips.Transform = _animator.GetBoneTransform(HumanBodyBones.Hips);
-            Spine.Transform = _animator.GetBoneTransform(HumanBodyBones.Spine);
-            Neck.Transform = _animator.GetBoneTransform(HumanBodyBones.Neck);
+            Bones[(int)BoneIndex.Hips].Transform = _animator.GetBoneTransform(HumanBodyBones.Hips);
+            Bones[(int)BoneIndex.Spine].Transform = _animator.GetBoneTransform(HumanBodyBones.Spine);
 
 
             // Left Arm
@@ -107,12 +85,10 @@ namespace WPT
             // Head
 
             Bones[(int)BoneIndex.Nose].Transform = _animator.GetBoneTransform(HumanBodyBones.Head);
-        }
 
-        private void SetBone()
-        {
-            // Body
+            #endregion
 
+            #region SetBone
 
             // Left Arm
 
@@ -142,12 +118,11 @@ namespace WPT
             Bones[(int)BoneIndex.RightKnee].Child = Bones[(int)BoneIndex.RightAnkle];
             Bones[(int)BoneIndex.RightAnkle].Child = Bones[(int)BoneIndex.RightHeel];
             Bones[(int)BoneIndex.RightAnkle].Parent = Bones[(int)BoneIndex.RightKnee];
-        }
 
-        private void SetInverse()
-        {
+            #endregion
+
             var forward = MatrixUtils.TriangleNormal(
-                Hips.Transform.position,
+                Bones[(int)BoneIndex.Hips].Transform.position,
                 Bones[(int)BoneIndex.LeftHip].Transform.position,
                 Bones[(int)BoneIndex.RightHip].Transform.position);
 
@@ -159,50 +134,49 @@ namespace WPT
 
                 if (bone.Child != null && bone.Child.Transform != null)
                 {
-                    bone.Inverse = Quaternion.Inverse(
-                        MatrixUtils.LookRotation(
-                            bone.Transform.position -
-                            bone.Child.Transform.position, forward));
+                    var rotation = MatrixUtils.LookRotation(
+                        bone.Transform.position -
+                        bone.Child.Transform.position, forward);
+
+                    bone.Inverse = Quaternion.Inverse(rotation);
                     bone.InverseRotation = bone.Inverse * bone.InitRotation;
                 }
             }
 
-            Hips.InitRotation = Hips.Transform.rotation;
-            Spine.InitRotation = Hips.Transform.rotation;
-            Neck.InitRotation = Neck.Transform.rotation;
+            var hips = Bones[(int)BoneIndex.Hips];
+            hips.Inverse = Quaternion.Inverse(Quaternion.LookRotation(forward));
+            hips.InverseRotation = hips.Inverse * hips.InitRotation;
 
-            _initPosition = Hips.Transform.position;
+            var spine = Bones[(int)BoneIndex.Spine];
 
-            Hips.Inverse = Quaternion.Inverse(MatrixUtils.LookRotation(forward));
-            Hips.InverseRotation = Hips.Inverse * Hips.InitRotation;
+            _initPosition = hips.Transform.position;
+
+            _isInitialized = true;
         }
 
         private void SetPosition()
         {
-            for (int i = 0; i < Bones.Length; i++)
+            for (int i = 0; i < 32; i++)
             {
-                Bones[i].Position = _runner.Positions[i];
+                Bones[i].Position = _runner.BonePositions[i];
             }
 
-            Hips.Position = (
+            Bones[(int)BoneIndex.Hips].Position = (
                 Bones[(int)BoneIndex.LeftHip].Position +
                 Bones[(int)BoneIndex.RightHip].Position) / 2f;
 
-            Hips.Position += _hipOffset;
+            Bones[(int)BoneIndex.Hips].Position += _hipOffset;
 
-            var chest = (
+            Bones[(int)BoneIndex.Spine].Position = (((
                 Bones[(int)BoneIndex.LeftShoulder].Position +
-                Bones[(int)BoneIndex.RightShoulder].Position) / 2f;
-
-            Neck.Position = chest + _neckOffset;
-
-            Spine.Position = (chest + Hips.Position) / 2f;
+                Bones[(int)BoneIndex.RightShoulder].Position) / 2f) +
+                Bones[(int)BoneIndex.Hips].Position) / 2f;
         }
 
         private void UpdateModel()
         {
             var forward = MatrixUtils.TriangleNormal(
-                Hips.Position,
+                Bones[(int)BoneIndex.Hips].Position,
                 Bones[(int)BoneIndex.LeftHip].Position,
                 Bones[(int)BoneIndex.RightHip].Position);
 
@@ -221,42 +195,16 @@ namespace WPT
                 }
             }
 
-            /*
+            var hips = Bones[(int)BoneIndex.Hips];
 
-            var t1 = Vector3.Distance(Bones[(int)BoneIndex.Nose].Position, Neck.Position);
-            var t2 = Vector3.Distance(Neck.Position, Spine.Position);
-            var pm = (Bones[(int)BoneIndex.RightShoulder].Position + Bones[(int)BoneIndex.LeftShoulder].Position) / 2f;
-            var t3 = Vector3.Distance(Spine.Position, pm);
-            var t4r = Vector3.Distance(Bones[(int)BoneIndex.RightHip].Position, Bones[(int)BoneIndex.RightKnee].Position);
-            var t4l = Vector3.Distance(Bones[(int)BoneIndex.LeftHip].Position, Bones[(int)BoneIndex.LeftKnee].Position);
-            var t4 = (t4r + t4l) / 2f;
-            var t5r = Vector3.Distance(Bones[(int)BoneIndex.RightKnee].Position, Bones[(int)BoneIndex.RightAnkle].Position);
-            var t5l = Vector3.Distance(Bones[(int)BoneIndex.LeftKnee].Position, Bones[(int)BoneIndex.LeftAnkle].Position);
-            var t5 = (t5r + t5l) / 2f;
-            var t = t1 + t2 + t3 + t4 + t5;
+            hips.Transform.localPosition = hips.Position + _initPosition;
+            hips.Transform.rotation = MatrixUtils.LookRotation(forward) * hips.InverseRotation;
 
-            tall = (t * 0.7f) + (prevTall * 0.3f);
-            prevTall = tall;
+            var spine = Bones[(int)BoneIndex.Spine];
 
-            if (tall == 0)
-            {
-                tall = centerTall;
-            }
+            var upperChest = (Bones[(int)BoneIndex.LeftShoulder].Position + Bones[(int)BoneIndex.RightShoulder].Position) / 2f;
 
-            float dz = (centerTall - tall) / centerTall * zScale;
-            */
-
-            var chest = (
-                Bones[(int)BoneIndex.LeftShoulder].Position +
-                Bones[(int)BoneIndex.RightShoulder].Position) / 2f;
-
-            Spine.Transform.rotation = MatrixUtils.LookRotation(
-                        Spine.Position - Hips.Position,
-                        chest - Spine.Position) * Spine.InverseRotation;
-
-
-            Hips.Transform.position = (Hips.Position * 0.005f) + new Vector3(_initPosition.x, _initPosition.y, _initPosition.z);
-            Hips.Transform.rotation = MatrixUtils.LookRotation(forward) * Hips.InverseRotation;
+            spine.Transform.rotation = MatrixUtils.LookRotation(spine.Position - upperChest, forward) * spine.InverseRotation;
         }
     }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Video;
 using WPT.Utilities;
 
@@ -10,20 +11,24 @@ namespace WPT
 
         public RenderTexture Texture => _buffer;
 
+        public Renderer Renderer => _renderer;
+
         public Vector2 Resolution => _resolution;
 
 
         // Fields
 
-        [SerializeField] private ImageSourceType _sourceType = ImageSourceType.Texture;
+        [SerializeField] private SourceType _sourceType = SourceType.Texture;
         [SerializeField] private Texture2D _texture;
-        [SerializeField] private VideoClip _video;
         [SerializeField] private VideoPlayer _videoPlayer;
         [SerializeField] private string _webcamName = "";
-        [SerializeField] private Vector2Int _webcamResolution = new(1920, 1080);
         [SerializeField] private int _webcamFrameRate = 30;
-        [SerializeField] private bool _playOnAwake = true;
         [SerializeField] private Vector2Int _resolution = new(1920, 1080);
+        [SerializeField] private RenderMode _renderMode = RenderMode.None;
+        [SerializeField] private RenderTexture _renderTexture;
+        [SerializeField] private Renderer _renderer;
+        [SerializeField] private string _propertyName;
+        [SerializeField] private RawImage _rawImage;
 
         private WebCamTexture _webcam;
         private RenderTexture _buffer;
@@ -33,17 +38,31 @@ namespace WPT
 
         private void Awake()
         {
-            if (_playOnAwake)
-            {
-                Initialize();
-            }
-        }
+            _buffer = new RenderTexture(_resolution.x, _resolution.y, 0);
 
-        private void Start()
-        {
-            if (!_playOnAwake)
+            switch (_sourceType)
             {
-                Initialize();
+                case SourceType.Texture:
+                    {
+                        if (_texture)
+                        {
+                            ImageUtils.TextureBlit(_texture, _buffer);
+                        }
+
+                        break;
+                    }
+                case SourceType.Webcam:
+                    {
+                        _webcam = new WebCamTexture(
+                            _webcamName,
+                            _resolution.x,
+                            _resolution.y,
+                            _webcamFrameRate);
+
+                        _webcam.Play();
+
+                        break;
+                    }
             }
         }
 
@@ -51,7 +70,7 @@ namespace WPT
         {
             switch (_sourceType)
             {
-                case ImageSourceType.Video:
+                case SourceType.Video:
                     {
                         if (_videoPlayer && _videoPlayer.texture)
                         {
@@ -60,13 +79,53 @@ namespace WPT
 
                         break;
                     }
-                case ImageSourceType.Webcam:
+                case SourceType.Webcam:
                     {
                         if (_webcam && _webcam.didUpdateThisFrame)
                         {
                             ImageUtils.TextureBlit(_webcam, _buffer);
                         }
 
+                        break;
+                    }
+            }
+
+            switch (_renderMode)
+            {
+                case RenderMode.RenderTexture:
+                    {
+                        if (_renderTexture)
+                        {
+                            _renderTexture = _buffer;
+                        }
+
+                        break;
+                    }
+                case RenderMode.Renderer:
+                    {
+                        if (_renderer && _renderer.material)
+                        {
+                            _renderer.material.SetTexture(_propertyName, _buffer);
+
+                            var aspect = (float)_resolution.x / _resolution.y;
+
+                            if (_renderer.transform.localScale.x / _renderer.transform.localScale.y != aspect)
+                            {
+                                _renderer.transform.localScale = new Vector3(
+                                _renderer.transform.localScale.x * aspect,
+                                _renderer.transform.localScale.y,
+                                _renderer.transform.localScale.z);
+                            }
+                        }
+
+                        break;
+                    }
+                case RenderMode.RawImage:
+                    {
+                        if (_rawImage)
+                        {
+                            _rawImage.texture = _buffer;
+                        }
                         break;
                     }
             }
@@ -88,47 +147,20 @@ namespace WPT
                 _buffer = null;
             }
         }
+    }
 
-        private void Initialize()
-        {
-            _buffer = new RenderTexture(_resolution.x, _resolution.y, 0);
+    public enum SourceType
+    {
+        Texture,
+        Video,
+        Webcam,
+    }
 
-            switch (_sourceType)
-            {
-                case ImageSourceType.Texture:
-                    {
-                        if (_texture == null) break;
-
-                        ImageUtils.TextureBlit(_texture, _buffer);
-
-                        break;
-                    }
-                case ImageSourceType.Video:
-                    {
-                        if (_videoPlayer == null) break;
-
-                        if (_video)
-                        {
-                            _videoPlayer.clip = _video;
-                        }
-
-                        _videoPlayer.Play();
-
-                        break;
-                    }
-                case ImageSourceType.Webcam:
-                    {
-                        _webcam = new WebCamTexture(
-                            _webcamName,
-                            _webcamResolution.x,
-                            _webcamResolution.y,
-                            _webcamFrameRate);
-
-                        _webcam.Play();
-
-                        break;
-                    }
-            }
-        }
+    public enum RenderMode
+    {
+        None,
+        RenderTexture,
+        Renderer,
+        RawImage,
     }
 }

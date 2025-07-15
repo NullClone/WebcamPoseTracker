@@ -14,32 +14,50 @@ namespace WPT
         private SerializedProperty _model;
         private SerializedProperty _imageSource;
         private SerializedProperty _scoreThreshold;
+        private SerializedProperty _kalmanParamQ;
+        private SerializedProperty _kalmanParamR;
+        private SerializedProperty _keypoints;
 
 
         // Methods
 
         public override void OnInspectorGUI()
         {
-            var inferenceRunner = (InferenceRunner)target;
+            var instance = (InferenceRunner)target;
 
             serializedObject.Update();
 
             EditorGUI.BeginDisabledGroup(Application.isPlaying);
 
-            EditorGUILayout.PropertyField(_imageSource);
-            EditorGUILayout.Space();
             EditorGUILayout.PropertyField(_model);
+            EditorGUILayout.Space();
+            EditorGUILayout.PropertyField(_imageSource);
+
+            EditorGUI.EndDisabledGroup();
+
+            EditorGUILayout.Space();
             EditorGUILayout.Slider(_scoreThreshold, 0f, 1f);
             EditorGUILayout.Space();
 
-            if (GUILayout.Button("Add Debugger"))
-            {
-                if (inferenceRunner.gameObject.GetComponent<InferenceRunnerDebugger>()) return;
+            instance._filterMode = (FilterMode)EditorGUILayout.EnumFlagsField("Filter", instance._filterMode);
 
-                Undo.AddComponent<InferenceRunnerDebugger>(inferenceRunner.gameObject);
+            EditorGUI.indentLevel++;
+
+            if ((instance._filterMode & FilterMode.KalmanFilter) != 0)
+            {
+                EditorGUILayout.PropertyField(_kalmanParamQ);
+                EditorGUILayout.PropertyField(_kalmanParamR);
+                EditorGUILayout.Space();
+            }
+            if ((instance._filterMode & FilterMode.LowPassFilter) != 0)
+            {
+                EditorGUILayout.HelpBox("Low Pass Filter is not implemented yet.", MessageType.Warning);
+                EditorGUILayout.Space();
             }
 
-            EditorGUI.EndDisabledGroup();
+            EditorGUI.indentLevel--;
+
+            EditorGUILayout.PropertyField(_keypoints);
 
             serializedObject.ApplyModifiedProperties();
         }
@@ -50,6 +68,9 @@ namespace WPT
             _model = serializedObject.FindProperty("_model");
             _imageSource = serializedObject.FindProperty("_imageSource");
             _scoreThreshold = serializedObject.FindProperty("_scoreThreshold");
+            _kalmanParamQ = serializedObject.FindProperty("_kalmanParamQ");
+            _kalmanParamR = serializedObject.FindProperty("_kalmanParamR");
+            _keypoints = serializedObject.FindProperty("_keypoints");
         }
     }
 }

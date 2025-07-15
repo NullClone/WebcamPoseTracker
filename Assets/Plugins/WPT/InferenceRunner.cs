@@ -10,9 +10,7 @@ namespace WPT
     {
         // Properties
 
-        public Vector3[] Positions { get; private set; } = new Vector3[NumKeypoints];
-
-        public bool[] Actives { get; private set; } = new bool[NumKeypoints];
+        public Vector3[] BonePositions { get; private set; } = new Vector3[NumKeypoints];
 
 
         // Fields
@@ -20,12 +18,18 @@ namespace WPT
         [SerializeField] private ModelResource _model;
         [SerializeField] private ImageSource _imageSource;
         [SerializeField] private float _scoreThreshold = 0.75f;
+        [SerializeField] private float _kalmanParamQ;
+        [SerializeField] private float _kalmanParamR;
+        [SerializeField] private Keypoint[] _keypoints;
+        public FilterMode _filterMode = FilterMode.KalmanFilter;
 
         private Tensor<float> _detectorInput;
         private Tensor<float> _landmarkerInput;
         private Awaitable _executeAwaitable;
         private float2x3 M;
         private float2x3 M2;
+        private Vector3[] _currentPositions = new Vector3[NumKeypoints];
+        private float3x3[] _positions = new float3x3[NumKeypoints];
         private bool _isInitialized;
 
 
@@ -80,6 +84,14 @@ namespace WPT
             using var landmarks = await (_model.LandmarkerWorker.PeekOutput(0) as Tensor<float>).ReadbackAndCloneAsync();
 
             SetKeypoints(landmarks);
+
+            if (_keypoints != null && _keypoints.Length == NumKeypoints)
+            {
+                for (int i = 0; i < NumKeypoints; i++)
+                {
+                    _keypoints[i].SetValue(BonePositions[i], true);
+                }
+            }
         }
 
 
@@ -161,13 +173,36 @@ namespace WPT
             {
                 var ImageSpacePosition = MatrixUtils.Multiply(M2, new float2(landmarks[(5 * i) + 0], landmarks[(5 * i) + 1]));
 
-                Positions[i] = new Vector3(
+                //if (landmarks[(5 * i) + 3] < 0.5f || landmarks[(5 * i) + 4] < 0.5f) return;
+
+                _currentPositions[i] = new Vector3(
                     ImageSpacePosition.x - (0.5f * _imageSource.Resolution.x),
                     ImageSpacePosition.y - (0.5f * _imageSource.Resolution.y),
                     landmarks[(5 * i) + 2]) / _imageSource.Resolution.y;
 
-                Actives[i] = landmarks[(5 * i) + 3] >= 0.5f && landmarks[(5 * i) + 4] >= 0.5f;
+                // KalmanFilter (KalmanK = c0 / KalmanP = c1 / KalmanX = c2)
+
+                _positions[i].c0.x = (_positions[i].c1.x + _kalmanParamQ) / (_positions[i].c1.x + _kalmanParamQ + _kalmanParamR);
+                _positions[i].c0.y = (_positions[i].c1.y + _kalmanParamQ) / (_positions[i].c1.y + _kalmanParamQ + _kalmanParamR);
+                _positions[i].c0.z = (_positions[i].c1.z + _kalmanParamQ) / (_positions[i].c1.z + _kalmanParamQ + _kalmanParamR);
+
+                _positions[i].c1.x = _kalmanParamR * (_positions[i].c1.x + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.x + _kalmanParamQ);
+                _positions[i].c1.y = _kalmanParamR * (_positions[i].c1.y + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.y + _kalmanParamQ);
+                _positions[i].c1.z = _kalmanParamR * (_positions[i].c1.z + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.z + _kalmanParamQ);
+
+                BonePositions[i].x = _positions[i].c2.x + ((_currentPositions[i].x - _positions[i].c2.x) * _positions[i].c0.x);
+                BonePositions[i].y = _positions[i].c2.y + ((_currentPositions[i].y - _positions[i].c2.y) * _positions[i].c0.y);
+                BonePositions[i].z = _positions[i].c2.z + ((_currentPositions[i].z - _positions[i].c2.z) * _positions[i].c0.z);
+                _positions[i].c2 = BonePositions[i];
             }
         }
+    }
+
+    [Flags]
+    public enum FilterMode
+    {
+        None = 0,
+        KalmanFilter = 1 << 0,
+        LowPassFilter = 1 << 1,
     }
 }

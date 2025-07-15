@@ -1,11 +1,11 @@
 #if UNITY_EDITOR
 
+using System;
 using UnityEditor;
 using UnityEngine;
 
 namespace WPT
 {
-    [CanEditMultipleObjects]
     [CustomEditor(typeof(ImageSource))]
     sealed class ImageSourceEditor : Editor
     {
@@ -13,20 +13,22 @@ namespace WPT
 
         private SerializedProperty _sourceType;
         private SerializedProperty _texture;
-        private SerializedProperty _video;
         private SerializedProperty _videoPlayer;
         private SerializedProperty _webcamName;
-        private SerializedProperty _webcamResolution;
         private SerializedProperty _webcamFrameRate;
-        private SerializedProperty _playOnAwake;
         private SerializedProperty _resolution;
+        private SerializedProperty _renderMode;
+        private SerializedProperty _renderTexture;
+        private SerializedProperty _renderer;
+        private SerializedProperty _propertyName;
+        private SerializedProperty _rawImage;
 
 
         // Methods
 
         public override void OnInspectorGUI()
         {
-            var imageSource = (ImageSource)target;
+            var instance = (ImageSource)target;
 
             serializedObject.Update();
 
@@ -36,24 +38,23 @@ namespace WPT
 
             EditorGUI.indentLevel++;
 
-            var type = (ImageSourceType)_sourceType.enumValueIndex;
+            var sourceType = (SourceType)_sourceType.enumValueIndex;
 
-            switch (type)
+            switch (sourceType)
             {
-                case ImageSourceType.Texture:
+                case SourceType.Texture:
                     {
                         EditorGUILayout.PropertyField(_texture);
 
                         break;
                     }
-                case ImageSourceType.Video:
+                case SourceType.Video:
                     {
-                        EditorGUILayout.PropertyField(_video);
                         EditorGUILayout.PropertyField(_videoPlayer);
 
                         break;
                     }
-                case ImageSourceType.Webcam:
+                case SourceType.Webcam:
                     {
                         EditorGUILayout.BeginHorizontal();
 
@@ -87,8 +88,7 @@ namespace WPT
 
                         EditorGUILayout.EndHorizontal();
 
-                        EditorGUILayout.PropertyField(_webcamResolution, new GUIContent("Resolution"));
-                        EditorGUILayout.PropertyField(_webcamFrameRate, new GUIContent("FrameRate"));
+                        EditorGUILayout.PropertyField(_webcamFrameRate, new GUIContent("Frame Rate"));
 
                         break;
                     }
@@ -97,18 +97,55 @@ namespace WPT
             EditorGUI.indentLevel--;
 
             EditorGUILayout.Space();
-            EditorGUILayout.PropertyField(_playOnAwake);
             EditorGUILayout.PropertyField(_resolution, new GUIContent("Output Resolution"));
-            EditorGUILayout.Space();
-
-            if (GUILayout.Button("Add Debugger"))
-            {
-                if (imageSource.gameObject.GetComponent<ImageSourceDebugger>()) return;
-
-                Undo.AddComponent<ImageSourceDebugger>(imageSource.gameObject);
-            }
 
             EditorGUI.EndDisabledGroup();
+
+            EditorGUILayout.Space();
+            EditorGUILayout.PropertyField(_renderMode);
+
+            var renderMode = (RenderMode)_renderMode.enumValueIndex;
+
+            switch (renderMode)
+            {
+                case RenderMode.RenderTexture:
+                    {
+                        EditorGUILayout.PropertyField(_renderTexture);
+
+                        break;
+                    }
+                case RenderMode.Renderer:
+                    {
+                        EditorGUILayout.PropertyField(_renderer);
+
+                        if (instance.Renderer == null) break;
+
+                        var material = instance.Renderer.sharedMaterial;
+
+                        if (material)
+                        {
+                            EditorGUI.indentLevel++;
+
+                            var names = material.GetPropertyNames(MaterialPropertyType.Texture);
+
+                            var selectedIndex = Array.IndexOf(names, _propertyName.stringValue);
+
+                            var index = EditorGUILayout.Popup("Material Property", selectedIndex, names);
+
+                            _propertyName.stringValue = names[index];
+
+                            EditorGUI.indentLevel--;
+                        }
+
+                        break;
+                    }
+                case RenderMode.RawImage:
+                    {
+                        EditorGUILayout.PropertyField(_rawImage);
+
+                        break;
+                    }
+            }
 
             serializedObject.ApplyModifiedProperties();
         }
@@ -118,13 +155,15 @@ namespace WPT
         {
             _sourceType = serializedObject.FindProperty("_sourceType");
             _texture = serializedObject.FindProperty("_texture");
-            _video = serializedObject.FindProperty("_video");
             _videoPlayer = serializedObject.FindProperty("_videoPlayer");
             _webcamName = serializedObject.FindProperty("_webcamName");
-            _webcamResolution = serializedObject.FindProperty("_webcamResolution");
             _webcamFrameRate = serializedObject.FindProperty("_webcamFrameRate");
-            _playOnAwake = serializedObject.FindProperty("_playOnAwake");
             _resolution = serializedObject.FindProperty("_resolution");
+            _renderMode = serializedObject.FindProperty("_renderMode");
+            _renderTexture = serializedObject.FindProperty("_renderTexture");
+            _renderer = serializedObject.FindProperty("_renderer");
+            _propertyName = serializedObject.FindProperty("_propertyName");
+            _rawImage = serializedObject.FindProperty("_rawImage");
         }
     }
 }

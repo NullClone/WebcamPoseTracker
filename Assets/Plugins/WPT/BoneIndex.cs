@@ -36,6 +36,9 @@ namespace WPT
         LeftFootIndex = 31,
         RightFootIndex = 32,
 
+        Hips = 33,
+        Spine = 34,
+
         Count,
     }
 }
