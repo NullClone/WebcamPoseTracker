@@ -16,10 +16,11 @@ namespace WPT
         private SerializedProperty _videoPlayer;
         private SerializedProperty _webcamName;
         private SerializedProperty _webcamFrameRate;
-        private SerializedProperty _resolution;
+        private SerializedProperty _webcamResolution;
         private SerializedProperty _renderMode;
         private SerializedProperty _renderTexture;
         private SerializedProperty _renderer;
+        private SerializedProperty _useAutoSelect;
         private SerializedProperty _propertyName;
         private SerializedProperty _rawImage;
 
@@ -89,15 +90,13 @@ namespace WPT
                         EditorGUILayout.EndHorizontal();
 
                         EditorGUILayout.PropertyField(_webcamFrameRate, new GUIContent("Frame Rate"));
+                        EditorGUILayout.PropertyField(_webcamResolution, new GUIContent("Resolution"));
 
                         break;
                     }
             }
 
             EditorGUI.indentLevel--;
-
-            EditorGUILayout.Space();
-            EditorGUILayout.PropertyField(_resolution, new GUIContent("Output Resolution"));
 
             EditorGUI.EndDisabledGroup();
 
@@ -124,6 +123,10 @@ namespace WPT
 
                         if (material)
                         {
+                            EditorGUILayout.PropertyField(_useAutoSelect);
+
+                            EditorGUI.BeginDisabledGroup(_useAutoSelect.boolValue);
+
                             EditorGUI.indentLevel++;
 
                             var names = material.GetPropertyNames(MaterialPropertyType.Texture);
@@ -135,6 +138,8 @@ namespace WPT
                             _propertyName.stringValue = names[index];
 
                             EditorGUI.indentLevel--;
+
+                            EditorGUI.EndDisabledGroup();
                         }
 
                         break;
@@ -158,10 +163,11 @@ namespace WPT
             _videoPlayer = serializedObject.FindProperty("_videoPlayer");
             _webcamName = serializedObject.FindProperty("_webcamName");
             _webcamFrameRate = serializedObject.FindProperty("_webcamFrameRate");
-            _resolution = serializedObject.FindProperty("_resolution");
+            _webcamResolution = serializedObject.FindProperty("_webcamResolution");
             _renderMode = serializedObject.FindProperty("_renderMode");
             _renderTexture = serializedObject.FindProperty("_renderTexture");
             _renderer = serializedObject.FindProperty("_renderer");
+            _useAutoSelect = serializedObject.FindProperty("_useAutoSelect");
             _propertyName = serializedObject.FindProperty("_propertyName");
             _rawImage = serializedObject.FindProperty("_rawImage");
         }

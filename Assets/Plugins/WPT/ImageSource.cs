@@ -23,36 +23,55 @@ namespace WPT
         [SerializeField] private VideoPlayer _videoPlayer;
         [SerializeField] private string _webcamName = "";
         [SerializeField] private int _webcamFrameRate = 30;
-        [SerializeField] private Vector2Int _resolution = new(1920, 1080);
+        [SerializeField] private Vector2Int _webcamResolution = new(1920, 1080);
         [SerializeField] private RenderMode _renderMode = RenderMode.None;
         [SerializeField] private RenderTexture _renderTexture;
         [SerializeField] private Renderer _renderer;
+        [SerializeField] private bool _useAutoSelect = true;
         [SerializeField] private string _propertyName;
         [SerializeField] private RawImage _rawImage;
 
         private WebCamTexture _webcam;
         private RenderTexture _buffer;
+        private Vector2Int _resolution;
 
 
         // Methods
 
         private void Awake()
         {
-            _buffer = new RenderTexture(_resolution.x, _resolution.y, 0);
-
             switch (_sourceType)
             {
                 case SourceType.Texture:
                     {
                         if (_texture)
                         {
+                            _resolution = new Vector2Int(_texture.width, _texture.height);
+
+                            _buffer = new RenderTexture(_resolution.x, _resolution.y, 0);
+
                             ImageUtils.TextureBlit(_texture, _buffer);
+                        }
+
+                        break;
+                    }
+                case SourceType.Video:
+                    {
+                        if (_videoPlayer)
+                        {
+                            _resolution = new Vector2Int((int)_videoPlayer.width, (int)_videoPlayer.height);
+
+                            _buffer = new RenderTexture(_resolution.x, _resolution.y, 0);
                         }
 
                         break;
                     }
                 case SourceType.Webcam:
                     {
+                        _resolution = _webcamResolution;
+
+                        _buffer = new RenderTexture(_resolution.x, _resolution.y, 0);
+
                         _webcam = new WebCamTexture(
                             _webcamName,
                             _resolution.x,
@@ -105,7 +124,14 @@ namespace WPT
                     {
                         if (_renderer && _renderer.material)
                         {
-                            _renderer.material.SetTexture(_propertyName, _buffer);
+                            if (_useAutoSelect)
+                            {
+                                _renderer.material.mainTexture = _buffer;
+                            }
+                            else
+                            {
+                                _renderer.material.SetTexture(_propertyName, _buffer);
+                            }
 
                             var aspect = (float)_resolution.x / _resolution.y;
 
@@ -126,6 +152,7 @@ namespace WPT
                         {
                             _rawImage.texture = _buffer;
                         }
+
                         break;
                     }
             }
