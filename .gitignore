@@ -9,10 +9,10 @@ Desktop.ini
 /.vs/
 /.idea
 /.vscode
+/*.vsconfig
 /*.csproj
 /*.sln
 *.swp
-*.vsconfig
 *.vcxproj.user
 
 # Unity
