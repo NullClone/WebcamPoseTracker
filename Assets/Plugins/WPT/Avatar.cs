@@ -215,13 +215,21 @@ namespace WPT
             var hips = Bones[(int)BoneIndex.Hips];
 
             hips.Transform.localPosition = hips.Position + _initPosition;
-            hips.Transform.rotation = MatrixUtils.LookRotation(forward) * hips.InverseRotation;
+            //hips.Transform.rotation = MatrixUtils.LookRotation(forward) * hips.InverseRotation;
 
             var spine = Bones[(int)BoneIndex.Spine];
 
             var upperChest = (Bones[(int)BoneIndex.LeftShoulder].Position + Bones[(int)BoneIndex.RightShoulder].Position) / 2f;
 
             spine.Transform.rotation = MatrixUtils.LookRotation(spine.Position - upperChest, forward) * spine.InverseRotation;
+
+            hips.Transform.rotation = Quaternion.FromToRotation(Vector3.forward, forward) * hips.InverseRotation;
+
+            var currentSpineDir = (upperChest - Bones[(int)BoneIndex.Spine].Position).normalized;
+
+            //Quaternion spineWorldRot = Quaternion.FromToRotation(spine.Transform.up, currentSpineDir);
+
+            //spine.Transform.localRotation = Quaternion.Inverse(spine.Transform.parent.rotation) * spineWorldRot * spine.InitRotation;
         }
     }
 }

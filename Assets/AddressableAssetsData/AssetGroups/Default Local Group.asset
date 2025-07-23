@@ -16,27 +16,27 @@ MonoBehaviour:
   m_GUID: 9e66cc50039a6414cb4c2cdb5a4d7cda
   m_SerializeEntries:
   - m_GUID: 06ac14cc650eba240a1977d39a38a511
-    m_Address: pose_landmarks_detector_full
+    m_Address: Landmarks_detector_full
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 296dae8ab858cb04e88edbca990f2af4
-    m_Address: pose_detection
+    m_Address: Detection
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 63cecab062b9f9b4ea6eb36193d95b0e
-    m_Address: pose_landmarks_detector_heavy
+    m_Address: Landmarks_detector_heavy
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8216e563d4129a24e8ffc519a15ed100
-    m_Address: pose_landmarks_detector_lite
+    m_Address: Landmarks_detector_lite
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e4eddab5c5d772647a6047cf4dc52745
-    m_Address: Assets/Data/Anchors.csv
+    m_Address: Anchors
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

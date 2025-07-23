@@ -12,7 +12,7 @@ namespace WPT
         // Properties
 
         private SerializedProperty _backendType;
-        private SerializedProperty _anchors;
+        private SerializedProperty _performanceLevel;
         private SerializedProperty _imageSource;
         private SerializedProperty _scoreThreshold;
         private SerializedProperty _filterMode;
@@ -29,14 +29,13 @@ namespace WPT
 
             EditorGUI.BeginDisabledGroup(Application.isPlaying);
 
-            EditorGUILayout.PropertyField(_backendType);
-            EditorGUILayout.PropertyField(_anchors);
-            EditorGUILayout.Space();
             EditorGUILayout.PropertyField(_imageSource);
+            EditorGUILayout.Space();
+            EditorGUILayout.PropertyField(_performanceLevel);
+            EditorGUILayout.PropertyField(_backendType);
 
             EditorGUI.EndDisabledGroup();
 
-            EditorGUILayout.Space();
             EditorGUILayout.Slider(_scoreThreshold, 0f, 1f);
             EditorGUILayout.Space();
 
@@ -68,7 +67,7 @@ namespace WPT
         private void OnEnable()
         {
             _backendType = serializedObject.FindProperty("_backendType");
-            _anchors = serializedObject.FindProperty("_anchors");
+            _performanceLevel = serializedObject.FindProperty("_performanceLevel");
             _imageSource = serializedObject.FindProperty("_imageSource");
             _scoreThreshold = serializedObject.FindProperty("_scoreThreshold");
             _filterMode = serializedObject.FindProperty("_filterMode");

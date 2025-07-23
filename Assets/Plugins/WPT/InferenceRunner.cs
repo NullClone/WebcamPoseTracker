@@ -14,30 +14,36 @@ namespace WPT
 
         public Vector3[] BonePositions { get; private set; } = new Vector3[NumKeypoints];
 
-        public float[,] Anchors { get; private set; }
-
 
         // Fields
 
-        [SerializeField] private BackendType _backendType = BackendType.GPUCompute;
-        [SerializeField] private TextAsset _anchors;
         [SerializeField] private ImageSource _imageSource;
-        [SerializeField] private float _scoreThreshold = 0.75f;
+        [SerializeField] private Keypoint[] _keypoints;
+        [SerializeField] private PerformanceLevel _performanceLevel = PerformanceLevel.Full;
+        [SerializeField] private BackendType _backendType = BackendType.GPUCompute;
         [SerializeField] private FilterMode _filterMode = FilterMode.None;
+        [SerializeField] private float _scoreThreshold = 0.75f;
         [SerializeField] private float _kalmanParamQ;
         [SerializeField] private float _kalmanParamR;
-        [SerializeField] private Keypoint[] _keypoints;
 
         private Worker _detectorWorker;
         private Worker _landmarkerWorker;
+        private float[,] _anchors;
         private Tensor<float> _detectorInput;
         private Tensor<float> _landmarkerInput;
         private Awaitable _executeAwaitable;
         private float2x3 M;
         private float2x3 M2;
+        private bool _isLoaded = true;
 
         private readonly float3x3[] _positions = new float3x3[NumKeypoints];
 
+
+        private const string DetectorPath = "Detection";
+        private const string LandmarkerFullPath = "Landmarks_detector_full";
+        private const string LandmarkerHeavyPath = "Landmarks_detector_heavy";
+        private const string LandmarkerLitePath = "Landmarks_detector_lite";
+        private const string AnchorsPath = "Anchors";
         private const int NumKeypoints = 33;
         private const int DetectorInputSize = 224;
         private const int LandmarkerInputSize = 256;
@@ -47,13 +53,23 @@ namespace WPT
 
         private async void Start()
         {
-            if (_imageSource == null || _anchors == null) return;
+            if (_imageSource == null) return;
 
-            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>("pose_detection");
-            var landmarkerHandle = Addressables.LoadAssetAsync<ModelAsset>("pose_landmarks_detector_full");
+            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>(DetectorPath);
+
+            var landmarkerHandle = _performanceLevel switch
+            {
+                PerformanceLevel.Lite => Addressables.LoadAssetAsync<ModelAsset>(LandmarkerLitePath),
+                PerformanceLevel.Full => Addressables.LoadAssetAsync<ModelAsset>(LandmarkerFullPath),
+                PerformanceLevel.Heavy => Addressables.LoadAssetAsync<ModelAsset>(LandmarkerHeavyPath),
+
+                _ => throw new ArgumentOutOfRangeException(nameof(_performanceLevel), _performanceLevel, null)
+            };
+
+            var anchorsHandle = Addressables.LoadAssetAsync<TextAsset>(AnchorsPath);
+
 
             await detectorHandle.Task;
-            await landmarkerHandle.Task;
 
             if (detectorHandle.Status == AsyncOperationStatus.Succeeded)
             {
@@ -65,6 +81,10 @@ namespace WPT
 
                 _detectorWorker = new Worker(graph.Compile(results.Item1, results.Item2, results.Item3), _backendType);
             }
+            else _isLoaded = false;
+
+
+            await landmarkerHandle.Task;
 
             if (landmarkerHandle.Status == AsyncOperationStatus.Succeeded)
             {
@@ -72,33 +92,44 @@ namespace WPT
 
                 _landmarkerWorker = new Worker(landmarkerModel, _backendType);
             }
+            else _isLoaded = false;
 
-            if (_detectorWorker == null || _landmarkerWorker == null) return;
 
-            _detectorInput = new Tensor<float>(new TensorShape(1, DetectorInputSize, DetectorInputSize, 3));
-            _landmarkerInput = new Tensor<float>(new TensorShape(1, LandmarkerInputSize, LandmarkerInputSize, 3));
+            await anchorsHandle.Task;
 
-            Anchors = ModelUtils.LoadAnchors(_anchors.text);
-
-            while (true)
+            if (anchorsHandle.Status == AsyncOperationStatus.Succeeded)
             {
-                try
-                {
-                    _executeAwaitable = ExecuteModel();
-
-                    await _executeAwaitable;
-                }
-                catch (OperationCanceledException)
-                {
-                    _detectorInput.Dispose();
-                    _landmarkerInput.Dispose();
-
-                    Addressables.Release(detectorHandle);
-                    Addressables.Release(landmarkerHandle);
-
-                    break;
-                }
+                _anchors = ModelUtils.LoadAnchors(anchorsHandle.Result.text);
             }
+            else _isLoaded = false;
+
+
+            if (_isLoaded)
+            {
+                _detectorInput = new Tensor<float>(new TensorShape(1, DetectorInputSize, DetectorInputSize, 3));
+                _landmarkerInput = new Tensor<float>(new TensorShape(1, LandmarkerInputSize, LandmarkerInputSize, 3));
+
+                while (true)
+                {
+                    try
+                    {
+                        _executeAwaitable = ExecuteModel();
+
+                        await _executeAwaitable;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                }
+
+                _detectorInput.Dispose();
+                _landmarkerInput.Dispose();
+            }
+
+            detectorHandle.Release();
+            landmarkerHandle.Release();
+            anchorsHandle.Release();
         }
 
         private async Awaitable ExecuteModel()
@@ -139,7 +170,7 @@ namespace WPT
 
         private void SetLandmarkerInput(int idx, Tensor<float> box)
         {
-            var anchorPosition = DetectorInputSize * new float2(Anchors[idx, 0], Anchors[idx, 1]);
+            var anchorPosition = DetectorInputSize * new float2(_anchors[idx, 0], _anchors[idx, 1]);
 
             var kp1 = MatrixUtils.Multiply(M, anchorPosition + new float2(box[0, 0, 4], box[0, 0, 5]));
             var kp2 = MatrixUtils.Multiply(M, anchorPosition + new float2(box[0, 0, 6], box[0, 0, 7]));
@@ -224,6 +255,13 @@ namespace WPT
             _detectorWorker?.Dispose();
             _landmarkerWorker?.Dispose();
         }
+    }
+
+    public enum PerformanceLevel
+    {
+        Lite,
+        Full,
+        Heavy,
     }
 
     [Flags]

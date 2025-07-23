@@ -5836,13 +5836,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 583b38ffa85b4b4479fc41864e76da03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _backendType: 256
-  _anchors: {fileID: 4900000, guid: e4eddab5c5d772647a6047cf4dc52745, type: 3}
   _imageSource: {fileID: 1814564739}
-  _scoreThreshold: 0.75
-  _filterMode: 0
-  _kalmanParamQ: 0.0001
-  _kalmanParamR: 0.001
   _keypoints:
   - {fileID: 1206135841}
   - {fileID: 1561620948}
@@ -5877,6 +5871,11 @@ MonoBehaviour:
   - {fileID: 1931289095}
   - {fileID: 98040044}
   - {fileID: 189056491}
+  _backendType: 256
+  _filterMode: 0
+  _scoreThreshold: 0.75
+  _kalmanParamQ: 0.0001
+  _kalmanParamR: 0.001
 --- !u!1001 &1769733435
 PrefabInstance:
   m_ObjectHideFlags: 0
