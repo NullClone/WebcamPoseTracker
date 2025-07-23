@@ -8,10 +8,12 @@ namespace WPT
         // Fields
 
         [SerializeField] private InferenceRunner _runner;
+        [SerializeField] private Vector3 _movementSenstivity = new Vector3(0.01f, 0.01f, 0.01f);
         [SerializeField] private Vector3 _hipOffset;
         [SerializeField] private Vector3 _neckOffset;
 
         private Animator _animator;
+        private GameObject _baseObject;
         private Vector3 _initPosition;
         private bool _isInitialized;
         private Bone[] Bones;
@@ -21,9 +23,15 @@ namespace WPT
 
         private void Start()
         {
+            if (_runner == null) return;
+
             _animator = gameObject.GetComponent<Animator>();
 
-            if (_animator == null || _runner == null) return;
+            if (_animator == null) return;
+
+            _baseObject = _animator.gameObject;
+
+            if (_baseObject == null) return;
 
             Initialize();
         }
@@ -46,47 +54,7 @@ namespace WPT
                 Bones[i] = new();
             }
 
-            #region GetBone
-
-            // Body
-
-            Bones[(int)BoneIndex.Hips].Transform = _animator.GetBoneTransform(HumanBodyBones.Hips);
-            Bones[(int)BoneIndex.Spine].Transform = _animator.GetBoneTransform(HumanBodyBones.Spine);
-
-
-            // Left Arm
-
-            Bones[(int)BoneIndex.LeftShoulder].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
-            Bones[(int)BoneIndex.LeftElbow].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
-            Bones[(int)BoneIndex.LeftWrist].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftHand);
-
-
-            // Right Arm
-
-            Bones[(int)BoneIndex.RightShoulder].Transform = _animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
-            Bones[(int)BoneIndex.RightElbow].Transform = _animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
-            Bones[(int)BoneIndex.RightWrist].Transform = _animator.GetBoneTransform(HumanBodyBones.RightHand);
-
-
-            // Left Leg
-
-            Bones[(int)BoneIndex.LeftHip].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
-            Bones[(int)BoneIndex.LeftKnee].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg);
-            Bones[(int)BoneIndex.LeftAnkle].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftFoot);
-
-
-            // Right Leg
-
-            Bones[(int)BoneIndex.RightHip].Transform = _animator.GetBoneTransform(HumanBodyBones.RightUpperLeg);
-            Bones[(int)BoneIndex.RightKnee].Transform = _animator.GetBoneTransform(HumanBodyBones.RightLowerLeg);
-            Bones[(int)BoneIndex.RightAnkle].Transform = _animator.GetBoneTransform(HumanBodyBones.RightFoot);
-
-
-            // Head
-
-            Bones[(int)BoneIndex.Nose].Transform = _animator.GetBoneTransform(HumanBodyBones.Head);
-
-            #endregion
+            GetBones();
 
             #region SetBone
 
@@ -152,6 +120,55 @@ namespace WPT
             _initPosition = hips.Transform.position;
 
             _isInitialized = true;
+        }
+
+        private void GetBones()
+        {
+            // Body
+
+            Bones[(int)BoneIndex.Hips].Transform = _animator.GetBoneTransform(HumanBodyBones.Hips);
+            Bones[(int)BoneIndex.Spine].Transform = _animator.GetBoneTransform(HumanBodyBones.Spine);
+
+
+            // Left Arm
+
+            Bones[(int)BoneIndex.LeftShoulder].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftUpperArm);
+            Bones[(int)BoneIndex.LeftElbow].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
+            Bones[(int)BoneIndex.LeftWrist].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftHand);
+            Bones[(int)BoneIndex.LeftThumb].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftThumbIntermediate);
+            Bones[(int)BoneIndex.LeftIndex].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftIndexProximal);
+            Bones[(int)BoneIndex.LeftPinky].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftLittleProximal);
+
+
+            // Right Arm
+
+            Bones[(int)BoneIndex.RightShoulder].Transform = _animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
+            Bones[(int)BoneIndex.RightElbow].Transform = _animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
+            Bones[(int)BoneIndex.RightWrist].Transform = _animator.GetBoneTransform(HumanBodyBones.RightHand);
+            Bones[(int)BoneIndex.RightThumb].Transform = _animator.GetBoneTransform(HumanBodyBones.RightThumbIntermediate);
+            Bones[(int)BoneIndex.RightIndex].Transform = _animator.GetBoneTransform(HumanBodyBones.RightIndexProximal);
+            Bones[(int)BoneIndex.RightPinky].Transform = _animator.GetBoneTransform(HumanBodyBones.RightLittleProximal);
+
+
+            // Left Leg
+
+            Bones[(int)BoneIndex.LeftHip].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
+            Bones[(int)BoneIndex.LeftKnee].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg);
+            Bones[(int)BoneIndex.LeftAnkle].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftFoot);
+            Bones[(int)BoneIndex.LeftFootIndex].Transform = _animator.GetBoneTransform(HumanBodyBones.LeftToes);
+
+
+            // Right Leg
+
+            Bones[(int)BoneIndex.RightHip].Transform = _animator.GetBoneTransform(HumanBodyBones.RightUpperLeg);
+            Bones[(int)BoneIndex.RightKnee].Transform = _animator.GetBoneTransform(HumanBodyBones.RightLowerLeg);
+            Bones[(int)BoneIndex.RightAnkle].Transform = _animator.GetBoneTransform(HumanBodyBones.RightFoot);
+            Bones[(int)BoneIndex.RightFootIndex].Transform = _animator.GetBoneTransform(HumanBodyBones.RightToes);
+
+
+            // Head
+
+            Bones[(int)BoneIndex.Nose].Transform = _animator.GetBoneTransform(HumanBodyBones.Head);
         }
 
         private void SetPosition()

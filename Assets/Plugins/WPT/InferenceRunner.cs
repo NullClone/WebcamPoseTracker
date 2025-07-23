@@ -2,18 +2,25 @@ using System;
 using Unity.InferenceEngine;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using WPT.Utilities;
 
 namespace WPT
 {
     public sealed class InferenceRunner : MonoBehaviour
     {
+        // Properties
+
+        public Vector3[] BonePositions { get; private set; } = new Vector3[NumKeypoints];
+
+        public float[,] Anchors { get; private set; }
+
+
         // Fields
 
-        public Vector3[] BonePositions = new Vector3[NumKeypoints];
-
-
-        [SerializeField] private ModelResource _model;
+        [SerializeField] private BackendType _backendType = BackendType.GPUCompute;
+        [SerializeField] private TextAsset _anchors;
         [SerializeField] private ImageSource _imageSource;
         [SerializeField] private float _scoreThreshold = 0.75f;
         [SerializeField] private FilterMode _filterMode = FilterMode.None;
@@ -21,11 +28,14 @@ namespace WPT
         [SerializeField] private float _kalmanParamR;
         [SerializeField] private Keypoint[] _keypoints;
 
+        private Worker _detectorWorker;
+        private Worker _landmarkerWorker;
         private Tensor<float> _detectorInput;
         private Tensor<float> _landmarkerInput;
         private Awaitable _executeAwaitable;
         private float2x3 M;
         private float2x3 M2;
+
         private readonly float3x3[] _positions = new float3x3[NumKeypoints];
 
         private const int NumKeypoints = 33;
@@ -33,21 +43,42 @@ namespace WPT
         private const int LandmarkerInputSize = 256;
 
 
-        // Async Methods
+        // Methods
 
         private async void Start()
         {
-            if (_imageSource == null) return;
+            if (_imageSource == null || _anchors == null) return;
 
-            if (_model)
+            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>("pose_detection");
+            var landmarkerHandle = Addressables.LoadAssetAsync<ModelAsset>("pose_landmarks_detector_full");
+
+            await detectorHandle.Task;
+            await landmarkerHandle.Task;
+
+            if (detectorHandle.Status == AsyncOperationStatus.Succeeded)
             {
-                _model.Initialize();
+                var detectorModel = ModelLoader.Load(detectorHandle.Result);
+                var graph = new FunctionalGraph();
+                var input = graph.AddInput(detectorModel, 0);
+                var outputs = Functional.Forward(detectorModel, input);
+                var results = ModelUtils.ArgMaxFiltering(outputs[0], outputs[1]);
 
-                if (_model.DetectorWorker == null || _model.LandmarkerWorker == null) return;
+                _detectorWorker = new Worker(graph.Compile(results.Item1, results.Item2, results.Item3), _backendType);
             }
+
+            if (landmarkerHandle.Status == AsyncOperationStatus.Succeeded)
+            {
+                var landmarkerModel = ModelLoader.Load(landmarkerHandle.Result);
+
+                _landmarkerWorker = new Worker(landmarkerModel, _backendType);
+            }
+
+            if (_detectorWorker == null || _landmarkerWorker == null) return;
 
             _detectorInput = new Tensor<float>(new TensorShape(1, DetectorInputSize, DetectorInputSize, 3));
             _landmarkerInput = new Tensor<float>(new TensorShape(1, LandmarkerInputSize, LandmarkerInputSize, 3));
+
+            Anchors = ModelUtils.LoadAnchors(_anchors.text);
 
             while (true)
             {
@@ -61,7 +92,9 @@ namespace WPT
                 {
                     _detectorInput.Dispose();
                     _landmarkerInput.Dispose();
-                    _model.Dispose();
+
+                    Addressables.Release(detectorHandle);
+                    Addressables.Release(landmarkerHandle);
 
                     break;
                 }
@@ -72,19 +105,19 @@ namespace WPT
         {
             SetDetectorInput();
 
-            _model.DetectorWorker.Schedule(_detectorInput);
+            _detectorWorker.Schedule(_detectorInput);
 
-            using var outputIdx = await (_model.DetectorWorker.PeekOutput(0) as Tensor<int>).ReadbackAndCloneAsync();
-            using var outputScore = await (_model.DetectorWorker.PeekOutput(1) as Tensor<float>).ReadbackAndCloneAsync();
-            using var outputBox = await (_model.DetectorWorker.PeekOutput(2) as Tensor<float>).ReadbackAndCloneAsync();
+            using var outputIdx = await (_detectorWorker.PeekOutput(0) as Tensor<int>).ReadbackAndCloneAsync();
+            using var outputScore = await (_detectorWorker.PeekOutput(1) as Tensor<float>).ReadbackAndCloneAsync();
+            using var outputBox = await (_detectorWorker.PeekOutput(2) as Tensor<float>).ReadbackAndCloneAsync();
 
             if (outputScore[0] < _scoreThreshold) return;
 
             SetLandmarkerInput(outputIdx[0], outputBox);
 
-            _model.LandmarkerWorker.Schedule(_landmarkerInput);
+            _landmarkerWorker.Schedule(_landmarkerInput);
 
-            using var landmarks = await (_model.LandmarkerWorker.PeekOutput(0) as Tensor<float>).ReadbackAndCloneAsync();
+            using var landmarks = await (_landmarkerWorker.PeekOutput(0) as Tensor<float>).ReadbackAndCloneAsync();
 
             SetKeypoints(landmarks);
         }
@@ -106,7 +139,7 @@ namespace WPT
 
         private void SetLandmarkerInput(int idx, Tensor<float> box)
         {
-            var anchorPosition = DetectorInputSize * new float2(_model.Anchors[idx, 0], _model.Anchors[idx, 1]);
+            var anchorPosition = DetectorInputSize * new float2(Anchors[idx, 0], Anchors[idx, 1]);
 
             var kp1 = MatrixUtils.Multiply(M, anchorPosition + new float2(box[0, 0, 4], box[0, 0, 5]));
             var kp2 = MatrixUtils.Multiply(M, anchorPosition + new float2(box[0, 0, 6], box[0, 0, 7]));
@@ -188,6 +221,8 @@ namespace WPT
         private void OnDestroy()
         {
             _executeAwaitable?.Cancel();
+            _detectorWorker?.Dispose();
+            _landmarkerWorker?.Dispose();
         }
     }
 
