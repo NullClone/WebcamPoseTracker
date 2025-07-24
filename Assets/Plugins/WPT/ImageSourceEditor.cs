@@ -12,6 +12,7 @@ namespace WPT
         // Properties
 
         private SerializedProperty _sourceType;
+        private SerializedProperty _isFlipX;
         private SerializedProperty _texture;
         private SerializedProperty _videoPlayer;
         private SerializedProperty _webcamName;
@@ -46,12 +47,14 @@ namespace WPT
                 case SourceType.Texture:
                     {
                         EditorGUILayout.PropertyField(_texture);
+                        EditorGUILayout.PropertyField(_isFlipX);
 
                         break;
                     }
                 case SourceType.Video:
                     {
                         EditorGUILayout.PropertyField(_videoPlayer);
+                        EditorGUILayout.PropertyField(_isFlipX);
 
                         break;
                     }
@@ -91,6 +94,7 @@ namespace WPT
 
                         EditorGUILayout.PropertyField(_webcamFrameRate, new GUIContent("Frame Rate"));
                         EditorGUILayout.PropertyField(_webcamResolution, new GUIContent("Resolution"));
+                        EditorGUILayout.PropertyField(_isFlipX);
 
                         break;
                     }
@@ -159,6 +163,7 @@ namespace WPT
         private void OnEnable()
         {
             _sourceType = serializedObject.FindProperty("_sourceType");
+            _isFlipX = serializedObject.FindProperty("_isFlipX");
             _texture = serializedObject.FindProperty("_texture");
             _videoPlayer = serializedObject.FindProperty("_videoPlayer");
             _webcamName = serializedObject.FindProperty("_webcamName");

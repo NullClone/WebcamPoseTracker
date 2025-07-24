@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
-using WPT.Utilities;
 
 namespace WPT
 {
@@ -19,6 +18,7 @@ namespace WPT
         // Fields
 
         [SerializeField] private SourceType _sourceType = SourceType.Texture;
+        [SerializeField] private bool _isFlipX = false;
         [SerializeField] private Texture2D _texture;
         [SerializeField] private VideoPlayer _videoPlayer;
         [SerializeField] private string _webcamName = "";
@@ -50,7 +50,7 @@ namespace WPT
 
                             _buffer = new RenderTexture(_resolution.x, _resolution.y, 0);
 
-                            ImageUtils.TextureBlit(_texture, _buffer);
+                            TextureBlit(_texture, _buffer, _isFlipX);
                         }
 
                         break;
@@ -93,7 +93,7 @@ namespace WPT
                     {
                         if (_videoPlayer && _videoPlayer.texture)
                         {
-                            ImageUtils.TextureBlit(_videoPlayer.texture, _buffer);
+                            TextureBlit(_videoPlayer.texture, _buffer, _isFlipX);
                         }
 
                         break;
@@ -102,7 +102,7 @@ namespace WPT
                     {
                         if (_webcam && _webcam.didUpdateThisFrame)
                         {
-                            ImageUtils.TextureBlit(_webcam, _buffer);
+                            TextureBlit(_webcam, _buffer, _isFlipX);
                         }
 
                         break;
@@ -183,6 +183,21 @@ namespace WPT
 
                 _buffer = null;
             }
+        }
+
+        private void TextureBlit(Texture srcTexture, RenderTexture dstTexture, bool isFlipX = false)
+        {
+            if (srcTexture == null || dstTexture == null) return;
+
+            var aspect1 = (float)srcTexture.width / srcTexture.height;
+            var aspect2 = (float)dstTexture.width / dstTexture.height;
+
+            var scale = Vector2.Min(Vector2.one, new Vector2(aspect2 / aspect1, aspect1 / aspect2));
+            if (isFlipX) scale.x *= -1;
+
+            var offset = (Vector2.one - scale) / 2;
+
+            Graphics.Blit(srcTexture, dstTexture, scale, offset);
         }
     }
 

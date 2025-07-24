@@ -5,6 +5,11 @@ namespace WPT
 {
     public sealed class Avatar : MonoBehaviour
     {
+        // Properties
+
+        private Bone[] Bones { get; set; } = new Bone[(int)BoneIndex.Count];
+
+
         // Fields
 
         [SerializeField] private InferenceRunner _runner;
@@ -13,9 +18,8 @@ namespace WPT
 
         private Animator _animator;
         private GameObject _baseObject;
-        private Vector3 _initPosition;
+        private Vector3 _basePosition;
         private bool _isInitialized;
-        private Bone[] Bones;
 
 
         // Methods
@@ -32,7 +36,18 @@ namespace WPT
 
             if (_baseObject == null) return;
 
-            Initialize();
+            _basePosition = _baseObject.transform.position;
+
+            for (int i = 0; i < Bones.Length; i++)
+            {
+                Bones[i] = new();
+            }
+
+            GetBones();
+            SetBones();
+            SetInverse();
+
+            _isInitialized = true;
         }
 
         private void Update()
@@ -42,85 +57,6 @@ namespace WPT
             SetPosition();
 
             UpdateModel();
-        }
-
-        private void Initialize()
-        {
-            Bones = new Bone[(int)BoneIndex.Count];
-
-            for (int i = 0; i < Bones.Length; i++)
-            {
-                Bones[i] = new();
-            }
-
-            GetBones();
-
-            #region SetBone
-
-            // Left Arm
-
-            Bones[(int)BoneIndex.LeftShoulder].Child = Bones[(int)BoneIndex.LeftElbow];
-            Bones[(int)BoneIndex.LeftElbow].Child = Bones[(int)BoneIndex.LeftWrist];
-            Bones[(int)BoneIndex.LeftElbow].Parent = Bones[(int)BoneIndex.LeftElbow];
-
-
-            // Right Arm
-
-            Bones[(int)BoneIndex.RightShoulder].Child = Bones[(int)BoneIndex.RightElbow];
-            Bones[(int)BoneIndex.RightElbow].Child = Bones[(int)BoneIndex.RightWrist];
-            Bones[(int)BoneIndex.RightElbow].Parent = Bones[(int)BoneIndex.RightElbow];
-
-
-            // Left Leg
-
-            Bones[(int)BoneIndex.LeftHip].Child = Bones[(int)BoneIndex.LeftKnee];
-            Bones[(int)BoneIndex.LeftKnee].Child = Bones[(int)BoneIndex.LeftAnkle];
-            Bones[(int)BoneIndex.LeftAnkle].Child = Bones[(int)BoneIndex.LeftHeel];
-            Bones[(int)BoneIndex.LeftAnkle].Parent = Bones[(int)BoneIndex.LeftKnee];
-
-
-            // Right Leg
-
-            Bones[(int)BoneIndex.RightHip].Child = Bones[(int)BoneIndex.RightKnee];
-            Bones[(int)BoneIndex.RightKnee].Child = Bones[(int)BoneIndex.RightAnkle];
-            Bones[(int)BoneIndex.RightAnkle].Child = Bones[(int)BoneIndex.RightHeel];
-            Bones[(int)BoneIndex.RightAnkle].Parent = Bones[(int)BoneIndex.RightKnee];
-
-            #endregion
-
-            var forward = MatrixUtils.TriangleNormal(
-                Bones[(int)BoneIndex.Hips].Transform.position,
-                Bones[(int)BoneIndex.LeftHip].Transform.position,
-                Bones[(int)BoneIndex.RightHip].Transform.position);
-
-            foreach (var bone in Bones)
-            {
-                if (bone.Transform == null) continue;
-
-                bone.InitRotation = bone.Transform.rotation;
-
-                if (bone.Child != null && bone.Child.Transform != null)
-                {
-                    var rotation = MatrixUtils.LookRotation(
-                        bone.Transform.position -
-                        bone.Child.Transform.position, forward);
-
-                    bone.Inverse = Quaternion.Inverse(rotation);
-                    bone.InverseRotation = bone.Inverse * bone.InitRotation;
-                }
-            }
-
-            var hips = Bones[(int)BoneIndex.Hips];
-            hips.Inverse = Quaternion.Inverse(Quaternion.LookRotation(forward));
-            hips.InverseRotation = hips.Inverse * hips.InitRotation;
-
-            var spine = Bones[(int)BoneIndex.Spine];
-            spine.Inverse = Quaternion.Inverse(Quaternion.LookRotation(forward));
-            spine.InverseRotation = spine.Inverse * spine.InitRotation;
-
-            _initPosition = gameObject.transform.position;
-
-            _isInitialized = true;
         }
 
         private void GetBones()
@@ -170,6 +106,71 @@ namespace WPT
             // Head
 
             Bones[(int)BoneIndex.Nose].Transform = _animator.GetBoneTransform(HumanBodyBones.Head);
+        }
+
+        private void SetBones()
+        {
+            // Left Arm
+
+            Bones[(int)BoneIndex.LeftShoulder].Child = Bones[(int)BoneIndex.LeftElbow];
+            Bones[(int)BoneIndex.LeftElbow].Child = Bones[(int)BoneIndex.LeftWrist];
+            Bones[(int)BoneIndex.LeftElbow].Parent = Bones[(int)BoneIndex.LeftElbow];
+
+
+            // Right Arm
+
+            Bones[(int)BoneIndex.RightShoulder].Child = Bones[(int)BoneIndex.RightElbow];
+            Bones[(int)BoneIndex.RightElbow].Child = Bones[(int)BoneIndex.RightWrist];
+            Bones[(int)BoneIndex.RightElbow].Parent = Bones[(int)BoneIndex.RightElbow];
+
+
+            // Left Leg
+
+            Bones[(int)BoneIndex.LeftHip].Child = Bones[(int)BoneIndex.LeftKnee];
+            Bones[(int)BoneIndex.LeftKnee].Child = Bones[(int)BoneIndex.LeftAnkle];
+            Bones[(int)BoneIndex.LeftAnkle].Child = Bones[(int)BoneIndex.LeftHeel];
+            Bones[(int)BoneIndex.LeftAnkle].Parent = Bones[(int)BoneIndex.LeftKnee];
+
+
+            // Right Leg
+
+            Bones[(int)BoneIndex.RightHip].Child = Bones[(int)BoneIndex.RightKnee];
+            Bones[(int)BoneIndex.RightKnee].Child = Bones[(int)BoneIndex.RightAnkle];
+            Bones[(int)BoneIndex.RightAnkle].Child = Bones[(int)BoneIndex.RightHeel];
+            Bones[(int)BoneIndex.RightAnkle].Parent = Bones[(int)BoneIndex.RightKnee];
+        }
+
+        private void SetInverse()
+        {
+            var forward = MatrixUtils.TriangleNormal(
+                Bones[(int)BoneIndex.Hips].Transform.position,
+                Bones[(int)BoneIndex.LeftHip].Transform.position,
+                Bones[(int)BoneIndex.RightHip].Transform.position);
+
+            foreach (var bone in Bones)
+            {
+                if (bone.Transform == null) continue;
+
+                bone.InitRotation = bone.Transform.rotation;
+
+                if (bone.Child != null && bone.Child.Transform != null)
+                {
+                    var rotation = MatrixUtils.LookRotation(
+                        bone.Transform.position -
+                        bone.Child.Transform.position, forward);
+
+                    bone.Inverse = Quaternion.Inverse(rotation);
+                    bone.InverseRotation = bone.Inverse * bone.InitRotation;
+                }
+            }
+
+            var hips = Bones[(int)BoneIndex.Hips];
+            hips.Inverse = Quaternion.Inverse(MatrixUtils.LookRotation(forward, Vector3.up));
+            hips.InverseRotation = hips.Inverse * hips.InitRotation;
+
+            var spine = Bones[(int)BoneIndex.Spine];
+            spine.Inverse = Quaternion.Inverse(MatrixUtils.LookRotation(forward, Vector3.up));
+            spine.InverseRotation = spine.Inverse * spine.InitRotation;
         }
 
         private void SetPosition()
@@ -225,7 +226,7 @@ namespace WPT
 
             Bones[(int)BoneIndex.Spine].Transform.rotation = MatrixUtils.LookRotation(spineForwardDirection, targetSpineUp) * Bones[(int)BoneIndex.Spine].InverseRotation;
 
-            gameObject.transform.position = Bones[(int)BoneIndex.Hips].Position + _initPosition;
+            gameObject.transform.position = Bones[(int)BoneIndex.Hips].Position + _basePosition;
         }
     }
 }

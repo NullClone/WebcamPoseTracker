@@ -6,8 +6,6 @@ namespace WPT.Utilities
 {
     public static class ImageUtils
     {
-        // Fields
-
         private static readonly ComputeShader _shader = (ComputeShader)Resources.Load("ImageTransform");
         private static readonly int ImageSample = _shader.FindKernel("ImageSample");
         private static readonly int Optr = Shader.PropertyToID("Optr");
@@ -19,8 +17,6 @@ namespace WPT.Utilities
         private static readonly int X_width = Shader.PropertyToID("X_width");
         private static readonly int affineMatrix = Shader.PropertyToID("affineMatrix");
 
-
-        // Methods
 
         public static void SampleImageAffine(Texture srcTexture, Tensor<float> dstTensor, float2x3 M)
         {
@@ -48,27 +44,9 @@ namespace WPT.Utilities
             _shader.Dispatch(ImageSample,
                 IDivC(dstTensor.shape[1], 8),
                 IDivC(dstTensor.shape[1], 8), 1);
-        }
-
-        public static void TextureBlit(Texture srcTexture, RenderTexture dstTexture, bool vflip = false)
-        {
-            if (srcTexture == null || dstTexture == null) return;
-
-            var aspect1 = (float)srcTexture.width / srcTexture.height;
-            var aspect2 = (float)dstTexture.width / dstTexture.height;
-
-            var scale = Vector2.Min(Vector2.one, new Vector2(aspect2 / aspect1, aspect1 / aspect2));
-            if (vflip) scale.y *= -1;
-
-            var offset = (Vector2.one - scale) / 2;
-
-            Graphics.Blit(srcTexture, dstTexture, scale, offset);
-        }
 
 
-        private static int IDivC(int v, int div)
-        {
-            return (v + div - 1) / div;
+            static int IDivC(int v, int div) => (v + div - 1) / div;
         }
     }
 }
