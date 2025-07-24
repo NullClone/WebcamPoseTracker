@@ -5,7 +5,6 @@ namespace WPT
     [SerializeField]
     public class Bone
     {
-        public bool Enabled = true;
         public Transform Transform;
         public Bone Parent;
         public Bone Child;

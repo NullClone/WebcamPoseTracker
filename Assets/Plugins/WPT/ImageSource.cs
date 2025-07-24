@@ -148,9 +148,19 @@ namespace WPT
                     }
                 case RenderMode.RawImage:
                     {
-                        if (_rawImage)
+                        if (_rawImage && _rawImage.material)
                         {
                             _rawImage.texture = _buffer;
+
+                            var aspect = (float)_resolution.x / _resolution.y;
+
+                            if (_rawImage.rectTransform.localScale.x / _rawImage.rectTransform.localScale.y != aspect)
+                            {
+                                _rawImage.rectTransform.localScale = new Vector3(
+                                _rawImage.rectTransform.localScale.x * aspect,
+                                _rawImage.rectTransform.localScale.y,
+                                _rawImage.rectTransform.localScale.z);
+                            }
                         }
 
                         break;

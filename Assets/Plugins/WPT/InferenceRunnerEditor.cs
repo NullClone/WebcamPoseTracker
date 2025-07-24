@@ -5,7 +5,6 @@ using UnityEngine;
 
 namespace WPT
 {
-    [CanEditMultipleObjects]
     [CustomEditor(typeof(InferenceRunner))]
     sealed class InferenceRunnerEditor : Editor
     {
@@ -33,11 +32,10 @@ namespace WPT
             EditorGUILayout.Space();
             EditorGUILayout.PropertyField(_performanceLevel);
             EditorGUILayout.PropertyField(_backendType);
-
-            EditorGUI.EndDisabledGroup();
-
             EditorGUILayout.Slider(_scoreThreshold, 0f, 1f);
             EditorGUILayout.Space();
+
+            EditorGUI.EndDisabledGroup();
 
             var filterMode = (FilterMode)_filterMode.enumValueFlag;
 

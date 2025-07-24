@@ -8,7 +8,6 @@ namespace WPT
         // Fields
 
         [SerializeField] private InferenceRunner _runner;
-        [SerializeField] private Vector3 _movementSenstivity = new Vector3(0.01f, 0.01f, 0.01f);
         [SerializeField] private Vector3 _hipOffset;
         [SerializeField] private Vector3 _neckOffset;
 
@@ -116,8 +115,10 @@ namespace WPT
             hips.InverseRotation = hips.Inverse * hips.InitRotation;
 
             var spine = Bones[(int)BoneIndex.Spine];
+            spine.Inverse = Quaternion.Inverse(Quaternion.LookRotation(forward));
+            spine.InverseRotation = spine.Inverse * spine.InitRotation;
 
-            _initPosition = hips.Transform.position;
+            _initPosition = gameObject.transform.position;
 
             _isInitialized = true;
         }
@@ -212,24 +213,19 @@ namespace WPT
                 }
             }
 
-            var hips = Bones[(int)BoneIndex.Hips];
+            Bones[(int)BoneIndex.Hips].Transform.rotation = MatrixUtils.LookRotation(forward, Vector3.up) * Bones[(int)BoneIndex.Hips].InverseRotation;
 
-            hips.Transform.localPosition = hips.Position + _initPosition;
-            //hips.Transform.rotation = MatrixUtils.LookRotation(forward) * hips.InverseRotation;
+            var targetSpineUp = ((
+                Bones[(int)BoneIndex.LeftShoulder].Position +
+                Bones[(int)BoneIndex.RightShoulder].Position) / 2f) - Bones[(int)BoneIndex.Hips].Position;
 
-            var spine = Bones[(int)BoneIndex.Spine];
+            var shoulderWidthVector = Bones[(int)BoneIndex.RightShoulder].Position - Bones[(int)BoneIndex.LeftShoulder].Position;
 
-            var upperChest = (Bones[(int)BoneIndex.LeftShoulder].Position + Bones[(int)BoneIndex.RightShoulder].Position) / 2f;
+            var spineForwardDirection = Vector3.Cross(shoulderWidthVector, targetSpineUp);
 
-            spine.Transform.rotation = MatrixUtils.LookRotation(spine.Position - upperChest, forward) * spine.InverseRotation;
+            Bones[(int)BoneIndex.Spine].Transform.rotation = MatrixUtils.LookRotation(spineForwardDirection, targetSpineUp) * Bones[(int)BoneIndex.Spine].InverseRotation;
 
-            hips.Transform.rotation = Quaternion.FromToRotation(Vector3.forward, forward) * hips.InverseRotation;
-
-            var currentSpineDir = (upperChest - Bones[(int)BoneIndex.Spine].Position).normalized;
-
-            //Quaternion spineWorldRot = Quaternion.FromToRotation(spine.Transform.up, currentSpineDir);
-
-            //spine.Transform.localRotation = Quaternion.Inverse(spine.Transform.parent.rotation) * spineWorldRot * spine.InitRotation;
+            gameObject.transform.position = Bones[(int)BoneIndex.Hips].Position + _initPosition;
         }
     }
 }

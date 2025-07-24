@@ -5,16 +5,6 @@ namespace WPT.Utilities
 {
     public static class MatrixUtils
     {
-        public static Quaternion LookRotation(Vector3 forward)
-        {
-            if (forward == Vector3.zero)
-            {
-                return Quaternion.identity;
-            }
-
-            return Quaternion.LookRotation(forward);
-        }
-
         public static Quaternion LookRotation(Vector3 forward, Vector3 upwards)
         {
             if (forward == Vector3.zero)
@@ -29,7 +19,9 @@ namespace WPT.Utilities
         {
             var result = Vector3.Cross(a - b, a - c);
 
-            return result.normalized;
+            result.Normalize();
+
+            return result;
         }
 
 

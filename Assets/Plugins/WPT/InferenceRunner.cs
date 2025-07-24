@@ -15,6 +15,11 @@ namespace WPT
         public Vector3[] BonePositions { get; private set; } = new Vector3[NumKeypoints];
 
 
+        public const int NumKeypoints = 33;
+        public const int DetectorInputSize = 224;
+        public const int LandmarkerInputSize = 256;
+
+
         // Fields
 
         [SerializeField] private ImageSource _imageSource;
@@ -28,25 +33,14 @@ namespace WPT
 
         private Worker _detectorWorker;
         private Worker _landmarkerWorker;
-        private float[,] _anchors;
         private Tensor<float> _detectorInput;
         private Tensor<float> _landmarkerInput;
         private Awaitable _executeAwaitable;
         private float2x3 M;
         private float2x3 M2;
-        private bool _isLoaded = true;
+        private float[,] _anchors;
 
         private readonly float3x3[] _positions = new float3x3[NumKeypoints];
-
-
-        private const string DetectorPath = "Detection";
-        private const string LandmarkerFullPath = "Landmarks_detector_full";
-        private const string LandmarkerHeavyPath = "Landmarks_detector_heavy";
-        private const string LandmarkerLitePath = "Landmarks_detector_lite";
-        private const string AnchorsPath = "Anchors";
-        private const int NumKeypoints = 33;
-        private const int DetectorInputSize = 224;
-        private const int LandmarkerInputSize = 256;
 
 
         // Methods
@@ -55,19 +49,7 @@ namespace WPT
         {
             if (_imageSource == null) return;
 
-            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>(DetectorPath);
-
-            var landmarkerHandle = _performanceLevel switch
-            {
-                PerformanceLevel.Lite => Addressables.LoadAssetAsync<ModelAsset>(LandmarkerLitePath),
-                PerformanceLevel.Full => Addressables.LoadAssetAsync<ModelAsset>(LandmarkerFullPath),
-                PerformanceLevel.Heavy => Addressables.LoadAssetAsync<ModelAsset>(LandmarkerHeavyPath),
-
-                _ => throw new ArgumentOutOfRangeException(nameof(_performanceLevel), _performanceLevel, null)
-            };
-
-            var anchorsHandle = Addressables.LoadAssetAsync<TextAsset>(AnchorsPath);
-
+            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>("Detection");
 
             await detectorHandle.Task;
 
@@ -77,12 +59,23 @@ namespace WPT
                 var graph = new FunctionalGraph();
                 var input = graph.AddInput(detectorModel, 0);
                 var outputs = Functional.Forward(detectorModel, input);
-                var results = ModelUtils.ArgMaxFiltering(outputs[0], outputs[1]);
+                var detectionScores = Functional.Sigmoid(Functional.Clamp(outputs[1], -100f, 100f));
+                var bestScoreIndex = Functional.ArgMax(outputs[1], 1).Squeeze();
+                var selectedBoxes = Functional.IndexSelect(outputs[0], 1, bestScoreIndex).Unsqueeze(0);
+                var selectedScores = Functional.IndexSelect(detectionScores, 1, bestScoreIndex).Unsqueeze(0);
 
-                _detectorWorker = new Worker(graph.Compile(results.Item1, results.Item2, results.Item3), _backendType);
+                _detectorWorker = new Worker(graph.Compile(bestScoreIndex, selectedScores, selectedBoxes), _backendType);
             }
-            else _isLoaded = false;
 
+
+            var landmarkerHandle = _performanceLevel switch
+            {
+                PerformanceLevel.Lite => Addressables.LoadAssetAsync<ModelAsset>("Landmarks_detector_lite"),
+                PerformanceLevel.Full => Addressables.LoadAssetAsync<ModelAsset>("Landmarks_detector_full"),
+                PerformanceLevel.Heavy => Addressables.LoadAssetAsync<ModelAsset>("Landmarks_detector_heavy"),
+
+                _ => throw new ArgumentOutOfRangeException(nameof(_performanceLevel), _performanceLevel, null)
+            };
 
             await landmarkerHandle.Task;
 
@@ -92,19 +85,29 @@ namespace WPT
 
                 _landmarkerWorker = new Worker(landmarkerModel, _backendType);
             }
-            else _isLoaded = false;
 
+
+            var anchorsHandle = Addressables.LoadAssetAsync<TextAsset>("Anchors");
 
             await anchorsHandle.Task;
 
             if (anchorsHandle.Status == AsyncOperationStatus.Succeeded)
             {
-                _anchors = ModelUtils.LoadAnchors(anchorsHandle.Result.text);
+                var anchors = anchorsHandle.Result.text.Split('\n');
+                _anchors = new float[anchors.Length - 1, 4];
+
+                for (int i = 0; i < anchors.Length - 1; i++)
+                {
+                    var anchorValues = anchors[i].Split(',');
+
+                    for (int j = 0; j < 4; j++)
+                    {
+                        _anchors[i, j] = float.Parse(anchorValues[j]);
+                    }
+                }
             }
-            else _isLoaded = false;
 
-
-            if (_isLoaded)
+            if (_detectorWorker != null && _landmarkerWorker != null && _anchors != null)
             {
                 _detectorInput = new Tensor<float>(new TensorShape(1, DetectorInputSize, DetectorInputSize, 3));
                 _landmarkerInput = new Tensor<float>(new TensorShape(1, LandmarkerInputSize, LandmarkerInputSize, 3));
@@ -195,56 +198,45 @@ namespace WPT
         {
             for (int i = 0; i < NumKeypoints; i++)
             {
-                var ImageSpacePosition = MatrixUtils.Multiply(M2, new float2(landmarks[(5 * i) + 0], landmarks[(5 * i) + 1]));
+                var imageSpacePosition = MatrixUtils.Multiply(M2, new float2(landmarks[(5 * i) + 0], landmarks[(5 * i) + 1]));
 
-                //if (landmarks[(5 * i) + 3] < 0.5f || landmarks[(5 * i) + 4] < 0.5f) return;
+                var active = landmarks[(5 * i) + 3] >= 0.5f && landmarks[(5 * i) + 4] >= 0.5f;
 
-                BonePositions[i] = new Vector3(
-                    ImageSpacePosition.x - (0.5f * _imageSource.Resolution.x),
-                    ImageSpacePosition.y - (0.5f * _imageSource.Resolution.y),
-                    landmarks[(5 * i) + 2]) / _imageSource.Resolution.y;
-
-                if ((_filterMode & FilterMode.KalmanFilter) != 0)
+                if (active)
                 {
-                    // KalmanK = c0 / KalmanP = c1 / KalmanX = c2
+                    BonePositions[i] = new Vector3(
+                        imageSpacePosition.x - (0.5f * _imageSource.Resolution.x),
+                        imageSpacePosition.y - (0.5f * _imageSource.Resolution.y),
+                        landmarks[(5 * i) + 2]) / _imageSource.Resolution.y;
 
-                    _positions[i].c0.x = (_positions[i].c1.x + _kalmanParamQ) / (_positions[i].c1.x + _kalmanParamQ + _kalmanParamR);
-                    _positions[i].c0.y = (_positions[i].c1.y + _kalmanParamQ) / (_positions[i].c1.y + _kalmanParamQ + _kalmanParamR);
-                    _positions[i].c0.z = (_positions[i].c1.z + _kalmanParamQ) / (_positions[i].c1.z + _kalmanParamQ + _kalmanParamR);
-
-                    _positions[i].c1.x = _kalmanParamR * (_positions[i].c1.x + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.x + _kalmanParamQ);
-                    _positions[i].c1.y = _kalmanParamR * (_positions[i].c1.y + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.y + _kalmanParamQ);
-                    _positions[i].c1.z = _kalmanParamR * (_positions[i].c1.z + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.z + _kalmanParamQ);
-
-                    BonePositions[i].x = _positions[i].c2.x + ((BonePositions[i].x - _positions[i].c2.x) * _positions[i].c0.x);
-                    BonePositions[i].y = _positions[i].c2.y + ((BonePositions[i].y - _positions[i].c2.y) * _positions[i].c0.y);
-                    BonePositions[i].z = _positions[i].c2.z + ((BonePositions[i].z - _positions[i].c2.z) * _positions[i].c0.z);
-
-                    _positions[i].c2 = BonePositions[i];
-                }
-
-                if ((_filterMode & FilterMode.LowPassFilter) != 0)
-                {
-                    /*
-
-                    _positions[0] = BonePositions[i];
-
-                    for (int j = 1; j < _positions.Length; j++)
+                    if ((_filterMode & FilterMode.KalmanFilter) != 0)
                     {
-                        _positions[j] = (_positions[i] * LowPassParam) + (_positions[j - 1] * (1f - LowPassParam));
+                        // KalmanK = c0 / KalmanP = c1 / KalmanX = c2
+
+                        _positions[i].c0.x = (_positions[i].c1.x + _kalmanParamQ) / (_positions[i].c1.x + _kalmanParamQ + _kalmanParamR);
+                        _positions[i].c0.y = (_positions[i].c1.y + _kalmanParamQ) / (_positions[i].c1.y + _kalmanParamQ + _kalmanParamR);
+                        _positions[i].c0.z = (_positions[i].c1.z + _kalmanParamQ) / (_positions[i].c1.z + _kalmanParamQ + _kalmanParamR);
+
+                        _positions[i].c1.x = _kalmanParamR * (_positions[i].c1.x + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.x + _kalmanParamQ);
+                        _positions[i].c1.y = _kalmanParamR * (_positions[i].c1.y + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.y + _kalmanParamQ);
+                        _positions[i].c1.z = _kalmanParamR * (_positions[i].c1.z + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.z + _kalmanParamQ);
+
+                        BonePositions[i].x = _positions[i].c2.x + ((BonePositions[i].x - _positions[i].c2.x) * _positions[i].c0.x);
+                        BonePositions[i].y = _positions[i].c2.y + ((BonePositions[i].y - _positions[i].c2.y) * _positions[i].c0.y);
+                        BonePositions[i].z = _positions[i].c2.z + ((BonePositions[i].z - _positions[i].c2.z) * _positions[i].c0.z);
+
+                        _positions[i].c2 = BonePositions[i];
                     }
 
-                    BonePositions[i] = _positions[^1];
+                    if ((_filterMode & FilterMode.LowPassFilter) != 0)
+                    {
 
-                    */
+                    }
                 }
-            }
 
-            if (_keypoints != null && _keypoints.Length == NumKeypoints)
-            {
-                for (int i = 0; i < NumKeypoints; i++)
+                if (_keypoints != null && _keypoints.Length == NumKeypoints)
                 {
-                    _keypoints[i].SetValue(BonePositions[i], true);
+                    _keypoints[i].SetValue(BonePositions[i], active);
                 }
             }
         }
@@ -257,7 +249,7 @@ namespace WPT
         }
     }
 
-    public enum PerformanceLevel
+    enum PerformanceLevel
     {
         Lite,
         Full,
