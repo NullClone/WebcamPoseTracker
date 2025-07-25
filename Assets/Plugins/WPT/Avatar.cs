@@ -3,23 +3,19 @@ using WPT.Utilities;
 
 namespace WPT
 {
+    [RequireComponent(typeof(Animator))]
     public sealed class Avatar : MonoBehaviour
     {
-        // Properties
-
-        private Bone[] Bones { get; set; } = new Bone[(int)BoneIndex.Count];
-
-
         // Fields
 
         [SerializeField] private InferenceRunner _runner;
-        [SerializeField] private Vector3 _hipOffset;
-        [SerializeField] private Vector3 _neckOffset;
 
         private Animator _animator;
         private GameObject _baseObject;
         private Vector3 _basePosition;
         private bool _isInitialized;
+
+        private readonly Bone[] Bones = new Bone[(int)BoneIndex.Count];
 
 
         // Methods
@@ -105,7 +101,7 @@ namespace WPT
 
             // Head
 
-            Bones[(int)BoneIndex.Nose].Transform = _animator.GetBoneTransform(HumanBodyBones.Head);
+            Bones[(int)BoneIndex.Nose].Transform = _animator.GetBoneTransform(HumanBodyBones.Neck);
         }
 
         private void SetBones()
@@ -171,6 +167,10 @@ namespace WPT
             var spine = Bones[(int)BoneIndex.Spine];
             spine.Inverse = Quaternion.Inverse(MatrixUtils.LookRotation(forward, Vector3.up));
             spine.InverseRotation = spine.Inverse * spine.InitRotation;
+
+            var head = Bones[(int)BoneIndex.Nose];
+            head.Inverse = Quaternion.Inverse(MatrixUtils.LookRotation(forward, Vector3.up));
+            head.InverseRotation = head.Inverse * head.InitRotation;
         }
 
         private void SetPosition()
@@ -184,7 +184,7 @@ namespace WPT
                 Bones[(int)BoneIndex.LeftHip].Position +
                 Bones[(int)BoneIndex.RightHip].Position) / 2f;
 
-            Bones[(int)BoneIndex.Hips].Position += _hipOffset;
+            Bones[(int)BoneIndex.Hips].Position.y += 0.01f;
 
             Bones[(int)BoneIndex.Spine].Position = (((
                 Bones[(int)BoneIndex.LeftShoulder].Position +
@@ -201,6 +201,10 @@ namespace WPT
 
             foreach (var bone in Bones)
             {
+                if (bone.Transform == null || bone.Child == null) continue;
+
+                if (bone.Position - bone.Child.Position == Vector3.zero) continue;
+
                 if (bone.Parent != null)
                 {
                     bone.Transform.rotation = MatrixUtils.LookRotation(
@@ -214,19 +218,30 @@ namespace WPT
                 }
             }
 
-            Bones[(int)BoneIndex.Hips].Transform.rotation = MatrixUtils.LookRotation(forward, Vector3.up) * Bones[(int)BoneIndex.Hips].InverseRotation;
+            var hips = Bones[(int)BoneIndex.Hips];
+
+            hips.Transform.rotation = MatrixUtils.LookRotation(forward, Vector3.up) * hips.InverseRotation;
+
+            var spine = Bones[(int)BoneIndex.Spine];
 
             var targetSpineUp = ((
                 Bones[(int)BoneIndex.LeftShoulder].Position +
-                Bones[(int)BoneIndex.RightShoulder].Position) / 2f) - Bones[(int)BoneIndex.Hips].Position;
+                Bones[(int)BoneIndex.RightShoulder].Position) / 2f) - hips.Position;
 
             var shoulderWidthVector = Bones[(int)BoneIndex.RightShoulder].Position - Bones[(int)BoneIndex.LeftShoulder].Position;
 
             var spineForwardDirection = Vector3.Cross(shoulderWidthVector, targetSpineUp);
 
-            Bones[(int)BoneIndex.Spine].Transform.rotation = MatrixUtils.LookRotation(spineForwardDirection, targetSpineUp) * Bones[(int)BoneIndex.Spine].InverseRotation;
+            spine.Transform.rotation = MatrixUtils.LookRotation(spineForwardDirection, targetSpineUp) * spine.InverseRotation;
 
-            gameObject.transform.position = Bones[(int)BoneIndex.Hips].Position + _basePosition;
+            var head = Bones[(int)BoneIndex.Nose];
+
+            var eyeMidPoint = (Bones[(int)BoneIndex.LeftEye].Position + Bones[(int)BoneIndex.RightEye].Position) / 2f;
+            var earMidPoint = (Bones[(int)BoneIndex.LeftEar].Position + Bones[(int)BoneIndex.RightEar].Position) / 2f;
+
+            head.Transform.rotation = MatrixUtils.LookRotation(eyeMidPoint - earMidPoint, Vector3.up) * head.InverseRotation;
+
+            gameObject.transform.position = hips.Position + _basePosition;
         }
     }
 }
