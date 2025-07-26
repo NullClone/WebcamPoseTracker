@@ -4,23 +4,21 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using WPT.Filters;
 using WPT.Utilities;
 
 namespace WPT
 {
     public sealed class InferenceRunner : MonoBehaviour
     {
-        // Properties
+        // Fields
 
-        public Vector3[] BonePositions { get; private set; } = new Vector3[NumKeypoints];
-
+        public Vector3[] BonePositions = new Vector3[NumKeypoints];
 
         public const int NumKeypoints = 33;
         public const int DetectorInputSize = 224;
         public const int LandmarkerInputSize = 256;
 
-
-        // Fields
 
         [SerializeField] private ImageSource _imageSource;
         [SerializeField] private Keypoint[] _keypoints;
@@ -28,8 +26,8 @@ namespace WPT
         [SerializeField] private BackendType _backendType = BackendType.GPUCompute;
         [SerializeField] private FilterMode _filterMode = FilterMode.None;
         [SerializeField] private float _scoreThreshold = 0.75f;
-        [SerializeField] private float _kalmanParamQ;
-        [SerializeField] private float _kalmanParamR;
+        [SerializeField] private float _timeInterval = 0.45f;
+        [SerializeField] private float _noise = 0.4f;
 
         private Worker _detectorWorker;
         private Worker _landmarkerWorker;
@@ -40,10 +38,18 @@ namespace WPT
         private float2x3 M2;
         private float[,] _anchors;
 
-        private readonly float3x3[] _positions = new float3x3[NumKeypoints];
+        private readonly KalmanFilter[] _kalmanFilters = new KalmanFilter[NumKeypoints];
 
 
         // Methods
+
+        private void Awake()
+        {
+            for (int i = 0; i < NumKeypoints; i++)
+            {
+                _kalmanFilters[i] = new KalmanFilter(_timeInterval, _noise);
+            }
+        }
 
         private async void Start()
         {
@@ -200,7 +206,7 @@ namespace WPT
             {
                 var imageSpacePosition = MatrixUtils.Multiply(M2, new float2(landmarks[(5 * i) + 0], landmarks[(5 * i) + 1]));
 
-                var active = landmarks[(5 * i) + 3] >= 0.5f && landmarks[(5 * i) + 4] >= 0.5f;
+                var active = landmarks[(5 * i) + 3] > 0.5f && landmarks[(5 * i) + 4] > 0.5f;
 
                 if (active)
                 {
@@ -211,21 +217,7 @@ namespace WPT
 
                     if ((_filterMode & FilterMode.KalmanFilter) != 0)
                     {
-                        // KalmanK = c0 / KalmanP = c1 / KalmanX = c2
-
-                        _positions[i].c0.x = (_positions[i].c1.x + _kalmanParamQ) / (_positions[i].c1.x + _kalmanParamQ + _kalmanParamR);
-                        _positions[i].c0.y = (_positions[i].c1.y + _kalmanParamQ) / (_positions[i].c1.y + _kalmanParamQ + _kalmanParamR);
-                        _positions[i].c0.z = (_positions[i].c1.z + _kalmanParamQ) / (_positions[i].c1.z + _kalmanParamQ + _kalmanParamR);
-
-                        _positions[i].c1.x = _kalmanParamR * (_positions[i].c1.x + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.x + _kalmanParamQ);
-                        _positions[i].c1.y = _kalmanParamR * (_positions[i].c1.y + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.y + _kalmanParamQ);
-                        _positions[i].c1.z = _kalmanParamR * (_positions[i].c1.z + _kalmanParamQ) / (_kalmanParamR + _positions[i].c1.z + _kalmanParamQ);
-
-                        BonePositions[i].x = _positions[i].c2.x + ((BonePositions[i].x - _positions[i].c2.x) * _positions[i].c0.x);
-                        BonePositions[i].y = _positions[i].c2.y + ((BonePositions[i].y - _positions[i].c2.y) * _positions[i].c0.y);
-                        BonePositions[i].z = _positions[i].c2.z + ((BonePositions[i].z - _positions[i].c2.z) * _positions[i].c0.z);
-
-                        _positions[i].c2 = BonePositions[i];
+                        BonePositions[i] = _kalmanFilters[i].CorrectAndPredict(BonePositions[i]);
                     }
 
                     if ((_filterMode & FilterMode.LowPassFilter) != 0)

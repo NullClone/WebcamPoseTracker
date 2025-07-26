@@ -2448,7 +2448,7 @@ VideoPlayer:
   m_AspectRatio: 2
   m_DataSource: 0
   m_TimeUpdateMode: 2
-  m_PlaybackSpeed: 0.5
+  m_PlaybackSpeed: 1
   m_AudioOutputMode: 0
   m_TargetAudioSources: []
   m_DirectAudioVolumes: []
@@ -5724,6 +5724,40 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 583b38ffa85b4b4479fc41864e76da03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  BonePositions:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
   _imageSource: {fileID: 1814564739}
   _keypoints:
   - {fileID: 1206135841}
@@ -5759,12 +5793,12 @@ MonoBehaviour:
   - {fileID: 1931289095}
   - {fileID: 98040044}
   - {fileID: 189056491}
-  _performanceLevel: 2
+  _performanceLevel: 1
   _backendType: 256
   _filterMode: 1
-  _scoreThreshold: 0.85
-  _kalmanParamQ: 0.0005
-  _kalmanParamR: 0.001
+  _scoreThreshold: 0.75
+  _timeInterval: 0.45
+  _noise: 0.4
 --- !u!1001 &1769733435
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6201,7 +6235,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _sourceType: 1
-  _isFlipX: 0
+  _isFlipX: 1
   _texture: {fileID: 2800000, guid: 7b33c1004aedfd84f89b5fad11fa8b0a, type: 3}
   _videoPlayer: {fileID: 633506227}
   _webcamName: USB2.0 FHD UVC WebCam

@@ -15,8 +15,8 @@ namespace WPT
         private SerializedProperty _imageSource;
         private SerializedProperty _scoreThreshold;
         private SerializedProperty _filterMode;
-        private SerializedProperty _kalmanParamQ;
-        private SerializedProperty _kalmanParamR;
+        private SerializedProperty _timeInterval;
+        private SerializedProperty _noise;
         private SerializedProperty _keypoints;
 
 
@@ -32,10 +32,11 @@ namespace WPT
             EditorGUILayout.Space();
             EditorGUILayout.PropertyField(_performanceLevel);
             EditorGUILayout.PropertyField(_backendType);
-            EditorGUILayout.Slider(_scoreThreshold, 0f, 1f);
-            EditorGUILayout.Space();
 
             EditorGUI.EndDisabledGroup();
+
+            EditorGUILayout.Slider(_scoreThreshold, 0f, 1f);
+            EditorGUILayout.Space();
 
             var filterMode = (FilterMode)_filterMode.enumValueFlag;
 
@@ -45,8 +46,12 @@ namespace WPT
 
             if ((filterMode & FilterMode.KalmanFilter) != 0)
             {
-                EditorGUILayout.PropertyField(_kalmanParamQ);
-                EditorGUILayout.PropertyField(_kalmanParamR);
+                EditorGUI.BeginDisabledGroup(Application.isPlaying);
+
+                EditorGUILayout.PropertyField(_timeInterval);
+                EditorGUILayout.PropertyField(_noise);
+
+                EditorGUI.EndDisabledGroup();
             }
             if ((filterMode & FilterMode.LowPassFilter) != 0)
             {
@@ -69,8 +74,8 @@ namespace WPT
             _imageSource = serializedObject.FindProperty("_imageSource");
             _scoreThreshold = serializedObject.FindProperty("_scoreThreshold");
             _filterMode = serializedObject.FindProperty("_filterMode");
-            _kalmanParamQ = serializedObject.FindProperty("_kalmanParamQ");
-            _kalmanParamR = serializedObject.FindProperty("_kalmanParamR");
+            _timeInterval = serializedObject.FindProperty("_timeInterval");
+            _noise = serializedObject.FindProperty("_noise");
             _keypoints = serializedObject.FindProperty("_keypoints");
         }
     }
