@@ -17,6 +17,8 @@ namespace WPT
         private SerializedProperty _filterMode;
         private SerializedProperty _timeInterval;
         private SerializedProperty _noise;
+        private SerializedProperty _order;
+        private SerializedProperty _smooth;
         private SerializedProperty _keypoints;
 
 
@@ -44,19 +46,25 @@ namespace WPT
 
             EditorGUI.indentLevel++;
 
+            EditorGUI.BeginDisabledGroup(Application.isPlaying);
+
             if ((filterMode & FilterMode.KalmanFilter) != 0)
             {
-                EditorGUI.BeginDisabledGroup(Application.isPlaying);
-
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Kalman Filter", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(_timeInterval);
                 EditorGUILayout.PropertyField(_noise);
-
-                EditorGUI.EndDisabledGroup();
             }
+
             if ((filterMode & FilterMode.LowPassFilter) != 0)
             {
-                EditorGUILayout.HelpBox("Low Pass Filter is not implemented yet.", MessageType.Warning);
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Low Pass Filter", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(_order);
+                EditorGUILayout.PropertyField(_smooth);
             }
+
+            EditorGUI.EndDisabledGroup();
 
             EditorGUI.indentLevel--;
 
@@ -76,6 +84,8 @@ namespace WPT
             _filterMode = serializedObject.FindProperty("_filterMode");
             _timeInterval = serializedObject.FindProperty("_timeInterval");
             _noise = serializedObject.FindProperty("_noise");
+            _order = serializedObject.FindProperty("_order");
+            _smooth = serializedObject.FindProperty("_smooth");
             _keypoints = serializedObject.FindProperty("_keypoints");
         }
     }

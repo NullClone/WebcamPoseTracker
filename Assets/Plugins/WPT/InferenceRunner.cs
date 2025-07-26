@@ -28,6 +28,8 @@ namespace WPT
         [SerializeField] private float _scoreThreshold = 0.75f;
         [SerializeField] private float _timeInterval = 0.45f;
         [SerializeField] private float _noise = 0.4f;
+        [SerializeField] private int _order = 7;
+        [SerializeField] private float _smooth = 0.9f;
 
         private Worker _detectorWorker;
         private Worker _landmarkerWorker;
@@ -39,6 +41,7 @@ namespace WPT
         private float[,] _anchors;
 
         private readonly KalmanFilter[] _kalmanFilters = new KalmanFilter[NumKeypoints];
+        private readonly LowPassFilter[] _lowPassFilters = new LowPassFilter[NumKeypoints];
 
 
         // Methods
@@ -48,6 +51,7 @@ namespace WPT
             for (int i = 0; i < NumKeypoints; i++)
             {
                 _kalmanFilters[i] = new KalmanFilter(_timeInterval, _noise);
+                _lowPassFilters[i] = new LowPassFilter(7, 0.9f);
             }
         }
 
@@ -222,7 +226,7 @@ namespace WPT
 
                     if ((_filterMode & FilterMode.LowPassFilter) != 0)
                     {
-
+                        BonePositions[i] = _lowPassFilters[i].CorrectAndPredict(BonePositions[i]);
                     }
                 }
 

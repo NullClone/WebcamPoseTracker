@@ -7,7 +7,6 @@ namespace WPT.Filters
     public class KalmanFilter
     {
         private readonly DiscreteKalmanFilter<ConstantVelocity3DModel, Vector3> kalmanFilter;
-        private int effectiveCount;
 
         public KalmanFilter(double timeInterval, double noise)
         {
@@ -33,8 +32,6 @@ namespace WPT.Filters
         {
             kalmanFilter.ProcessNoise = ConstantVelocity3DModel.GetProcessNoise(noise, timeInterval);
             kalmanFilter.TransitionMatrix = ConstantVelocity3DModel.GetTransitionMatrix(timeInterval);
-
-            effectiveCount = 0;
         }
 
         public Vector3 CorrectAndPredict(Vector3 value)

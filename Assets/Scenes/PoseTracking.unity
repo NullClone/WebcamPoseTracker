@@ -5795,10 +5795,12 @@ MonoBehaviour:
   - {fileID: 189056491}
   _performanceLevel: 1
   _backendType: 256
-  _filterMode: 1
+  _filterMode: -1
   _scoreThreshold: 0.75
   _timeInterval: 0.45
   _noise: 0.4
+  _order: 7
+  _smooth: 0.9
 --- !u!1001 &1769733435
 PrefabInstance:
   m_ObjectHideFlags: 0

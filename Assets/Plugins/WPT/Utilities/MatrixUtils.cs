@@ -65,9 +65,6 @@ namespace WPT.Utilities
         }
 
 
-        public static int RowCount<T>(this T[,] matrix) => matrix.GetLength(0);
-
-        public static int ColumnCount<T>(this T[,] matrix) => matrix.GetLength(1);
 
         public static double[,] Multiply(this double[,] a, double[,] b)
         {
