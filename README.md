@@ -21,6 +21,13 @@ Follow the steps below.
 ## Usage
 Open the scene from `Assets > Scenes > PoseTracking`
 
+## Explanation
+
+### InferenceRunner
+<p align="center">
+  <img width="50%" src="https://github.com/user-attachments/assets/8f1434fa-daf1-4268-9adf-54faa81693ec" /><br>
+</p>
+
 ## Roadmap
 - [x] Implementing Kalman Filter
 - [x] Implementing LowPass Filter 
