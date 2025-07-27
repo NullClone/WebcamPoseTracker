@@ -51,7 +51,7 @@ namespace WPT
             for (int i = 0; i < NumKeypoints; i++)
             {
                 _kalmanFilters[i] = new KalmanFilter(_timeInterval, _noise);
-                _lowPassFilters[i] = new LowPassFilter(7, 0.9f);
+                _lowPassFilters[i] = new LowPassFilter(_order, _smooth);
             }
         }
 
