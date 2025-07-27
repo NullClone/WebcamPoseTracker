@@ -6,14 +6,22 @@
 
 ## Feature
 
-Tracking pose using Webcam in Unity.
+Using Mediapipe to track pose in Unity.
 
-High Speed ​​Pose Tracking with Mediapipe
+## Install
+Follow the steps below.
+
+1. This repositories clone please.
+    ```bash
+    https://github.com/NullClone/WebcamPoseTracker.git
+    ```
+
+2. Open in Unity `6000.0.43f1`
 
 ## Usage
-Code -> Download ZIP
-
-Unzip and open in Unity.
+Open the scene from `Assets > Scenes > PoseTracking`
 
 ## Roadmap
-- [ ] More accurate
+- [x] Implementing Kalman Filter
+- [x] Implementing LowPass Filter 
+- [ ] Multi Person Tracking
