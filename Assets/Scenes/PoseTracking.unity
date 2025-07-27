@@ -6237,16 +6237,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _sourceType: 1
-  _isFlipX: 1
-  _texture: {fileID: 2800000, guid: 7b33c1004aedfd84f89b5fad11fa8b0a, type: 3}
+  _isFlipX: 0
+  _texture: {fileID: 0}
   _videoPlayer: {fileID: 633506227}
-  _webcamName: USB2.0 FHD UVC WebCam
+  _webcamName: 
   _webcamFrameRate: 30
   _webcamResolution: {x: 1920, y: 1080}
   _renderMode: 2
   _renderTexture: {fileID: 0}
   _renderer: {fileID: 66326662}
-  _useAutoSelect: 1
+  _useAutoSelect: 0
   _propertyName: _BaseMap
   _rawImage: {fileID: 0}
 --- !u!4 &1814564740

@@ -129,21 +129,26 @@ namespace WPT
                         {
                             EditorGUILayout.PropertyField(_useAutoSelect);
 
-                            EditorGUI.BeginDisabledGroup(_useAutoSelect.boolValue);
-
                             EditorGUI.indentLevel++;
+
+                            EditorGUI.BeginDisabledGroup(_useAutoSelect.boolValue);
 
                             var names = material.GetPropertyNames(MaterialPropertyType.Texture);
 
                             var selectedIndex = Array.IndexOf(names, _propertyName.stringValue);
 
+                            if (selectedIndex < 0)
+                            {
+                                selectedIndex = 0;
+                            }
+
                             var index = EditorGUILayout.Popup("Material Property", selectedIndex, names);
 
                             _propertyName.stringValue = names[index];
 
-                            EditorGUI.indentLevel--;
-
                             EditorGUI.EndDisabledGroup();
+
+                            EditorGUI.indentLevel--;
                         }
 
                         break;
