@@ -73,6 +73,30 @@ Open the scene from `Assets > Scenes > PoseTracking`
         </ul>
       </td>
     </tr>
+    <tr>
+      <td colspan="3">
+        <b>Score Threshold</b>
+      </td>
+      <td>
+        <p>Threshold for running the model.</p>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="3">
+        <b>Filter</b>
+      </td>
+      <td>
+        <p>You can specify the filter.</p>
+      </td>
+    </tr>
+    <tr>
+      <td>-</td>
+      <td colspan=2>
+        <b>Kalman Filter</b>
+      </td>
+      <td>
+        <p>You can specify the filter.</p>
+      </td>
   </tbody>
 </table>
 
