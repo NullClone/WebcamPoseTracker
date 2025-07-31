@@ -14,7 +14,6 @@ namespace WPT.Filters
         private double[,] EstimateCovariance;
         private double[,] TransitionMatrix;
         private double[,] ProcessNoise;
-        private int _effectiveCount;
 
         private readonly double[,] MeasurementNoise;
         private readonly double[,] MeasurementMatrix = new double[3, 6]
@@ -24,14 +23,14 @@ namespace WPT.Filters
             { 0, 0, 0, 0, 1, 0, }
         };
 
-        private const int MeasurementVectorDimension = 3;
+        private int _effectiveCount;
 
 
         // Methods
 
         public KalmanFilter(double timeInterval, double noise)
         {
-            MeasurementNoise = MatrixUtils.Diagonal(MeasurementVectorDimension, 1.0);
+            MeasurementNoise = MatrixUtils.Diagonal(3, 1.0); // MeasurementVectorDimension
 
             SetParameter(timeInterval, noise);
             Predict();
@@ -53,54 +52,12 @@ namespace WPT.Filters
 
             TransitionMatrix = new double[6, 6]
             {
-                {
-                    1.0,
-                    timeInterval,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                },
-                {
-                    0.0,
-                    1.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                },
-                {
-                    0.0,
-                    0.0,
-                    1.0,
-                    timeInterval,
-                    0.0,
-                    0.0,
-                },
-                {
-                    0.0,
-                    0.0,
-                    0.0,
-                    1.0,
-                    0.0,
-                    0.0,
-                },
-                {
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    1.0,
-                    timeInterval,
-                },
-                {
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    1.0,
-                }
+                { 1, timeInterval, 0, 0, 0, 0 },
+                { 0, 1, 0, 0, 0, 0 },
+                { 0, 0, 1, timeInterval, 0, 0 },
+                { 0, 0, 0, 1, 0, 0 },
+                { 0, 0, 0, 0, 1, timeInterval },
+                { 0, 0, 0, 0, 0, 1 }
             };
         }
 
@@ -133,7 +90,7 @@ namespace WPT.Filters
             Correct(value);
             Predict();
 
-            if (_effectiveCount >= 10)
+            if (_effectiveCount >= 50)
             {
                 // Velocity state[1] / state[3] / state[5]
 
