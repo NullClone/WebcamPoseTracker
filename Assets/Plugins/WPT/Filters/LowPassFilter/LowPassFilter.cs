@@ -6,40 +6,40 @@ namespace WPT.Filters
     {
         // Fields
 
-        private readonly Vector3[] prevPos3D = new Vector3[10];
-        private readonly int NOrderLPF = 7;
-        private readonly float Smooth = 0.9f;
+        private readonly int _nOrder = 7;
+        private readonly float _smooth = 0.9f;
+        private readonly Vector3[] _prevPositions = new Vector3[10];
 
-        private int effectiveCount;
+        private int _effectiveCount = 0;
 
 
         // Methods
 
-        public LowPassFilter(int order, float smooth)
+        public LowPassFilter(int nOrder, float smooth)
         {
-            NOrderLPF = Mathf.Min(order, 10);
-            Smooth = smooth;
+            _nOrder = Mathf.Min(nOrder, 10);
+            _smooth = smooth;
         }
 
         public Vector3 CorrectAndPredict(Vector3 value)
         {
-            prevPos3D[0] = value;
+            _prevPositions[0] = value;
 
-            for (int i = 1; i < NOrderLPF; i++)
+            for (int i = 1; i < _nOrder; i++)
             {
-                prevPos3D[i] = (prevPos3D[i] * (1f - Smooth)) + (prevPos3D[i - 1] * Smooth);
+                _prevPositions[i] = (_prevPositions[i] * (1f - _smooth)) + (_prevPositions[i - 1] * _smooth);
             }
 
-            prevPos3D[0] = (prevPos3D[0] * (1f - Smooth)) + (prevPos3D[NOrderLPF - 1] * Smooth);
+            _prevPositions[0] = (_prevPositions[0] * (1f - _smooth)) + (_prevPositions[_nOrder - 1] * _smooth);
 
-            if (effectiveCount < 10)
+            if (_effectiveCount < 10)
             {
-                effectiveCount++;
+                _effectiveCount++;
 
                 return value;
             }
 
-            return prevPos3D[0];
+            return _prevPositions[0];
         }
     }
 }

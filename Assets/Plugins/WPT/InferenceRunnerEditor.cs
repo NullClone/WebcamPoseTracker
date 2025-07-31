@@ -17,7 +17,7 @@ namespace WPT
         private SerializedProperty _filterMode;
         private SerializedProperty _timeInterval;
         private SerializedProperty _noise;
-        private SerializedProperty _order;
+        private SerializedProperty _nOrder;
         private SerializedProperty _smooth;
         private SerializedProperty _keypoints;
 
@@ -60,7 +60,7 @@ namespace WPT
             {
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Low Pass Filter", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(_order);
+                EditorGUILayout.PropertyField(_nOrder);
                 EditorGUILayout.PropertyField(_smooth);
             }
 
@@ -84,7 +84,7 @@ namespace WPT
             _filterMode = serializedObject.FindProperty("_filterMode");
             _timeInterval = serializedObject.FindProperty("_timeInterval");
             _noise = serializedObject.FindProperty("_noise");
-            _order = serializedObject.FindProperty("_order");
+            _nOrder = serializedObject.FindProperty("_nOrder");
             _smooth = serializedObject.FindProperty("_smooth");
             _keypoints = serializedObject.FindProperty("_keypoints");
         }

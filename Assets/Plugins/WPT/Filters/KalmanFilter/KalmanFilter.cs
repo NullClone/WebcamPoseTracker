@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using WPT.Utilities;
 
@@ -6,40 +5,144 @@ namespace WPT.Filters
 {
     public class KalmanFilter
     {
-        private readonly DiscreteKalmanFilter<ConstantVelocity3DModel, Vector3> kalmanFilter;
+        // Fields
+
+        private double[] state = new double[6] { 0, 0, 0, 0, 0, 0 };
+        private double[,] ResidualCovariance;
+        private double[,] ResidualCovarianceInv;
+        private double[,] KalmanGain;
+        private double[,] EstimateCovariance;
+        private double[,] TransitionMatrix;
+        private double[,] ProcessNoise;
+        private int _effectiveCount;
+
+        private readonly double[,] MeasurementNoise;
+        private readonly double[,] MeasurementMatrix = new double[3, 6]
+        {
+            { 1, 0, 0, 0, 0, 0, },
+            { 0, 0, 1, 0, 0, 0, },
+            { 0, 0, 0, 0, 1, 0, }
+        };
+
+        private const int MeasurementVectorDimension = 3;
+
+
+        // Methods
 
         public KalmanFilter(double timeInterval, double noise)
         {
-            kalmanFilter = new(
-                new ConstantVelocity3DModel(),
-                ConstantVelocity3DModel.GetProcessNoise(noise, timeInterval),
-                3,
-                0,
-                new Func<ConstantVelocity3DModel, double[]>(ConstantVelocity3DModel.ToArray),
-                new Func<double[], ConstantVelocity3DModel>(ConstantVelocity3DModel.FromArray),
-                measurementConvertFunc);
+            MeasurementNoise = MatrixUtils.Diagonal(MeasurementVectorDimension, 1.0);
 
-            kalmanFilter.ProcessNoise = ConstantVelocity3DModel.GetProcessNoise(noise, timeInterval);
-            kalmanFilter.MeasurementNoise = MatrixUtils.Diagonal(kalmanFilter.MeasurementVectorDimension, 1.0);
-            kalmanFilter.MeasurementMatrix = ConstantVelocity3DModel.GetPositionMeasurementMatrix();
-            kalmanFilter.TransitionMatrix = ConstantVelocity3DModel.GetTransitionMatrix(timeInterval);
-            kalmanFilter.Predict();
-
-            static double[] measurementConvertFunc(Vector3 value) => new double[3] { value.x, value.y, value.z };
+            SetParameter(timeInterval, noise);
+            Predict();
         }
 
-        public void UpdateFilterParameter(double timeInterval, double noise)
+        public void SetParameter(double timeInterval, double noise)
         {
-            kalmanFilter.ProcessNoise = ConstantVelocity3DModel.GetProcessNoise(noise, timeInterval);
-            kalmanFilter.TransitionMatrix = ConstantVelocity3DModel.GetTransitionMatrix(timeInterval);
+            var numArray = new double[6, 3];
+            numArray[0, 0] = timeInterval * timeInterval / 2.0;
+            numArray[1, 0] = timeInterval;
+            numArray[2, 1] = timeInterval * timeInterval / 2.0;
+            numArray[3, 1] = timeInterval;
+            numArray[4, 2] = timeInterval * timeInterval / 2.0;
+            numArray[5, 2] = timeInterval;
+
+            ProcessNoise = numArray.Multiply(MatrixUtils.Diagonal(numArray.GetLength(1), noise)).Multiply(numArray.Transpose());
+
+            EstimateCovariance = ProcessNoise;
+
+            TransitionMatrix = new double[6, 6]
+            {
+                {
+                    1.0,
+                    timeInterval,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                },
+                {
+                    0.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                },
+                {
+                    0.0,
+                    0.0,
+                    1.0,
+                    timeInterval,
+                    0.0,
+                    0.0,
+                },
+                {
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                },
+                {
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0,
+                    timeInterval,
+                },
+                {
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0,
+                }
+            };
+        }
+
+        public void Predict()
+        {
+            state = TransitionMatrix.Multiply(state);
+
+            EstimateCovariance = MatrixUtils.Add(TransitionMatrix.Multiply(EstimateCovariance).Multiply(TransitionMatrix.Transpose()), ProcessNoise);
+
+            var b = MeasurementMatrix.Transpose();
+
+            ResidualCovariance = MatrixUtils.Add(MeasurementMatrix.Multiply(EstimateCovariance).Multiply(b), MeasurementNoise);
+            ResidualCovarianceInv = ResidualCovariance.Inverse();
+            KalmanGain = EstimateCovariance.Multiply(b).Multiply(ResidualCovarianceInv);
+        }
+
+        public void Correct(Vector3 value)
+        {
+            var measurement = new double[3] { value.x, value.y, value.z };
+
+            var innovation = MatrixUtils.Subtract(measurement, MeasurementMatrix.Multiply(state));
+
+            state = MatrixUtils.Add(state, KalmanGain.Multiply(innovation));
+
+            EstimateCovariance = MatrixUtils.Identity(state.Length).Subtract(KalmanGain.Multiply(MeasurementMatrix)).Multiply(EstimateCovariance);
         }
 
         public Vector3 CorrectAndPredict(Vector3 value)
         {
-            kalmanFilter.Correct(value);
-            kalmanFilter.Predict();
+            Correct(value);
+            Predict();
 
-            return kalmanFilter.State.Position;
+            if (_effectiveCount >= 10)
+            {
+                // Velocity state[1] / state[3] / state[5]
+
+                return new Vector3((float)state[0], (float)state[2], (float)state[4]);
+            }
+
+            ++_effectiveCount;
+
+            return value;
         }
     }
 }

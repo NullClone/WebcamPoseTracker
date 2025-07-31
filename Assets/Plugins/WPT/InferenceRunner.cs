@@ -28,7 +28,7 @@ namespace WPT
         [SerializeField] private float _scoreThreshold = 0.75f;
         [SerializeField] private float _timeInterval = 0.45f;
         [SerializeField] private float _noise = 0.4f;
-        [SerializeField] private int _order = 7;
+        [SerializeField] private int _nOrder = 7;
         [SerializeField] private float _smooth = 0.9f;
 
         private Worker _detectorWorker;
@@ -51,7 +51,7 @@ namespace WPT
             for (int i = 0; i < NumKeypoints; i++)
             {
                 _kalmanFilters[i] = new KalmanFilter(_timeInterval, _noise);
-                _lowPassFilters[i] = new LowPassFilter(_order, _smooth);
+                _lowPassFilters[i] = new LowPassFilter(_nOrder, _smooth);
             }
         }
 
