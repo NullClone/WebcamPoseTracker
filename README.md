@@ -19,11 +19,14 @@ Follow the steps below.
 ## Usage
 Open the scene from `Assets > Scenes > PoseTracking`
 
+> [!WARNING]
+> If you use a webcam, don't forget to change the `SourceType` of `ImageSource` to `Webcam` and set the device.
+
 ## Explanation
 
 ### Inference Runner
 <p align="center">
- <img width="40%" alt="Inference Runner" src="https://github.com/user-attachments/assets/3d40e08a-751b-402a-b72c-70ffd8c4820d" />
+  <img width="50%" alt="Inference Runner" src="https://github.com/user-attachments/assets/3d40e08a-751b-402a-b72c-70ffd8c4820d" />
 </p>
 
 <table width="100%">
@@ -78,7 +81,7 @@ Open the scene from `Assets > Scenes > PoseTracking`
         <b>Score Threshold</b>
       </td>
       <td>
-        <p>Threshold for running the model.</p>
+        <p>Filter results based on prediction scores.</p>
       </td>
     </tr>
     <tr>
@@ -87,6 +90,11 @@ Open the scene from `Assets > Scenes > PoseTracking`
       </td>
       <td>
         <p>You can specify the filter.</p>
+        <ul>
+          <li>None</li>
+          <li>Kalman Filter (Default)</li>
+          <li>Low Pass Filter (Default)</li>
+        </ul>
       </td>
     </tr>
     <tr>
@@ -97,10 +105,32 @@ Open the scene from `Assets > Scenes > PoseTracking`
       <td>
         <p>You can specify the filter.</p>
       </td>
+    </tr>
+    <tr>
+      <td>-</td>
+      <td colspan=2>
+        <b>Low Pass Filter</b>
+      </td>
+      <td>
+        <p>You can specify the filter.</p>
+      </td>
+    </tr>
+    <tr>
+      <td colspan=3>
+        <b>Keypoints</b>
+      </td>
+      <td>
+        <p>You can specify the filter.</p>
+      </td>
+    </tr>
   </tbody>
 </table>
 
 ## Roadmap
 - [x] Implementing Kalman Filter
-- [x] Implementing LowPass Filter 
+- [x] Implementing Low Pass Filter 
 - [ ] Multi Person Tracking
+
+## Reference
+- https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker
+- https://digital-standard.com/tdpt/
