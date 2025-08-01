@@ -56,7 +56,7 @@ namespace WPT
                 EditorGUILayout.PropertyField(_timeInterval);
                 EditorGUILayout.PropertyField(_noise);
 
-                if (EditorGUI.EndChangeCheck())
+                if (EditorGUI.EndChangeCheck() && Application.isPlaying)
                 {
                     UpdateKalmanFilter();
                 }
