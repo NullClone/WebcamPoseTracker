@@ -102,8 +102,16 @@ Open the scene from `Assets > Scenes > PoseTracking`
       <td colspan=2>
         <b>Kalman Filter</b>
       </td>
-      <td>
-        <p>You can specify the filter.</p>
+      <td>   
+        <b>Time Interval<br></b>
+        <p>Kalman filter time interval.</p>
+        <b>Noise<br></b>
+        <p>The noise magnitude of the Kalman filter.</p>
+        <p>
+          <b>- Note -<br></b>
+          Higher values will result in more agile movement but more jerky movements.<br>
+          Lower values will result in smoother movement but less movement.<br>
+        </p>
       </td>
     </tr>
     <tr>
@@ -112,7 +120,11 @@ Open the scene from `Assets > Scenes > PoseTracking`
         <b>Low Pass Filter</b>
       </td>
       <td>
-        <p>You can specify the filter.</p>
+        <b>Smooth<br></b>
+        <p>Low Pass Filter smoothness.</p>
+        <p>*Changing the value does not affect the processing speed.</p>
+        <b>N Order</b><br>
+        <p>Enter the number of times to apply the Low Pass Filter.</p>
       </td>
     </tr>
     <tr>
@@ -120,7 +132,7 @@ Open the scene from `Assets > Scenes > PoseTracking`
         <b>Keypoints</b>
       </td>
       <td>
-        <p>You can specify the filter.</p>
+        <p>Keypoints for debugging.</p>
       </td>
     </tr>
   </tbody>
