@@ -26,7 +26,7 @@ Open the scene from `Assets > Scenes > PoseTracking`
 
 ### Inference Runner
 <p align="center">
-  <img width="50%" alt="Inference Runner" src="https://github.com/user-attachments/assets/3d40e08a-751b-402a-b72c-70ffd8c4820d" />
+  <img width="50%" alt="Inference Runner" src="https://github.com/user-attachments/assets/b1874985-5033-45f7-8961-6a4242d12cf1" />
 </p>
 
 <table width="100%">
@@ -105,13 +105,12 @@ Open the scene from `Assets > Scenes > PoseTracking`
       <td>   
         <b>Time Interval<br></b>
         <p>Kalman filter time interval.</p>
-        <b>Noise<br></b>
-        <p>The noise magnitude of the Kalman filter.</p>
         <p>
-          <b>- Note -<br></b>
           Higher values will result in more agile movement but more jerky movements.<br>
           Lower values will result in smoother movement but less movement.<br>
         </p>
+        <b>Noise<br></b>
+        <p>The noise magnitude of the Kalman filter.</p>
       </td>
     </tr>
     <tr>
@@ -122,7 +121,7 @@ Open the scene from `Assets > Scenes > PoseTracking`
       <td>
         <b>Smooth<br></b>
         <p>Low Pass Filter smoothness.</p>
-        <p>*Changing the value does not affect the processing speed.</p>
+        <p>Changing the value does not affect the processing speed.</p>
         <b>N Order</b><br>
         <p>Enter the number of times to apply the Low Pass Filter.</p>
       </td>
@@ -137,6 +136,11 @@ Open the scene from `Assets > Scenes > PoseTracking`
     </tr>
   </tbody>
 </table>
+
+### Image Source
+<p align="center">
+  <img width="50%" alt="Image Source" src="https://github.com/user-attachments/assets/30eeeb6f-64a6-407f-a40b-f6d9e5ba5982" />
+</p>
 
 ## Roadmap
 - [x] Implementing Kalman Filter
