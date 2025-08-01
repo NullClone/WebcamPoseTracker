@@ -5799,7 +5799,7 @@ MonoBehaviour:
   _scoreThreshold: 0.75
   _timeInterval: 0.45
   _noise: 0.4
-  _nOrder: 7
+  _nOrder: 9
   _smooth: 0.9
 --- !u!1001 &1769733435
 PrefabInstance:

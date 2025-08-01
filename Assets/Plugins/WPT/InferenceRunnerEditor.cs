@@ -53,8 +53,8 @@ namespace WPT
 
                 EditorGUI.BeginChangeCheck();
 
-                EditorGUILayout.PropertyField(_timeInterval);
-                EditorGUILayout.PropertyField(_noise);
+                EditorGUILayout.Slider(_timeInterval, 0f, 1f);
+                EditorGUILayout.Slider(_noise, 0f, 1f);
 
                 if (EditorGUI.EndChangeCheck() && Application.isPlaying)
                 {
@@ -68,8 +68,8 @@ namespace WPT
 
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Low Pass Filter", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(_nOrder);
-                EditorGUILayout.PropertyField(_smooth);
+                EditorGUILayout.Slider(_smooth, 0f, 1f);
+                EditorGUILayout.IntSlider(_nOrder, 1, 9);
 
                 EditorGUI.EndDisabledGroup();
             }
