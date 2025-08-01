@@ -14,6 +14,8 @@ namespace WPT
         // Fields
 
         public Vector3[] BonePositions = new Vector3[NumKeypoints];
+        public KalmanFilter[] KalmanFilters = new KalmanFilter[NumKeypoints];
+        public LowPassFilter[] LowPassFilters = new LowPassFilter[NumKeypoints];
 
         public const int NumKeypoints = 33;
         public const int DetectorInputSize = 224;
@@ -40,9 +42,6 @@ namespace WPT
         private float2x3 M2;
         private float[,] _anchors;
 
-        private readonly KalmanFilter[] _kalmanFilters = new KalmanFilter[NumKeypoints];
-        private readonly LowPassFilter[] _lowPassFilters = new LowPassFilter[NumKeypoints];
-
 
         // Methods
 
@@ -50,8 +49,11 @@ namespace WPT
         {
             for (int i = 0; i < NumKeypoints; i++)
             {
-                _kalmanFilters[i] = new KalmanFilter(_timeInterval, _noise);
-                _lowPassFilters[i] = new LowPassFilter(_nOrder, _smooth);
+                KalmanFilters[i] = new KalmanFilter();
+                KalmanFilters[i].SetParameter(_timeInterval, _noise);
+                KalmanFilters[i].Predict();
+
+                LowPassFilters[i] = new LowPassFilter(_nOrder, _smooth);
             }
         }
 
@@ -221,12 +223,12 @@ namespace WPT
 
                     if ((_filterMode & FilterMode.KalmanFilter) != 0)
                     {
-                        BonePositions[i] = _kalmanFilters[i].CorrectAndPredict(BonePositions[i]);
+                        BonePositions[i] = KalmanFilters[i].CorrectAndPredict(BonePositions[i]);
                     }
 
                     if ((_filterMode & FilterMode.LowPassFilter) != 0)
                     {
-                        BonePositions[i] = _lowPassFilters[i].CorrectAndPredict(BonePositions[i]);
+                        BonePositions[i] = LowPassFilters[i].CorrectAndPredict(BonePositions[i]);
                     }
                 }
 
@@ -243,13 +245,16 @@ namespace WPT
             _detectorWorker?.Dispose();
             _landmarkerWorker?.Dispose();
         }
-    }
 
-    enum PerformanceLevel
-    {
-        Lite,
-        Full,
-        Heavy,
+
+        // Enums
+
+        enum PerformanceLevel
+        {
+            Lite,
+            Full,
+            Heavy,
+        }
     }
 
     [Flags]

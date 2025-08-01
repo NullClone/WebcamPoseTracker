@@ -15,7 +15,7 @@ namespace WPT.Filters
         private double[,] TransitionMatrix;
         private double[,] ProcessNoise;
 
-        private readonly double[,] MeasurementNoise;
+        private readonly double[,] MeasurementNoise = MatrixUtils.Diagonal(3, 1.0);
         private readonly double[,] MeasurementMatrix = new double[3, 6]
         {
             { 1, 0, 0, 0, 0, 0, },
@@ -27,14 +27,6 @@ namespace WPT.Filters
 
 
         // Methods
-
-        public KalmanFilter(double timeInterval, double noise)
-        {
-            MeasurementNoise = MatrixUtils.Diagonal(3, 1.0); // MeasurementVectorDimension
-
-            SetParameter(timeInterval, noise);
-            Predict();
-        }
 
         public void SetParameter(double timeInterval, double noise)
         {
@@ -59,6 +51,8 @@ namespace WPT.Filters
                 { 0, 0, 0, 0, 1, timeInterval },
                 { 0, 0, 0, 0, 0, 1 }
             };
+
+            _effectiveCount = 0;
         }
 
         public void Predict()
@@ -92,8 +86,6 @@ namespace WPT.Filters
 
             if (_effectiveCount >= 50)
             {
-                // Velocity state[1] / state[3] / state[5]
-
                 return new Vector3((float)state[0], (float)state[2], (float)state[4]);
             }
 

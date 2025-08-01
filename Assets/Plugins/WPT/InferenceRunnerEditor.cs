@@ -46,25 +46,33 @@ namespace WPT
 
             EditorGUI.indentLevel++;
 
-            EditorGUI.BeginDisabledGroup(Application.isPlaying);
-
             if ((filterMode & FilterMode.KalmanFilter) != 0)
             {
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Kalman Filter", EditorStyles.boldLabel);
+
+                EditorGUI.BeginChangeCheck();
+
                 EditorGUILayout.PropertyField(_timeInterval);
                 EditorGUILayout.PropertyField(_noise);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    UpdateKalmanFilter();
+                }
             }
 
             if ((filterMode & FilterMode.LowPassFilter) != 0)
             {
+                EditorGUI.BeginDisabledGroup(Application.isPlaying);
+
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Low Pass Filter", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(_nOrder);
                 EditorGUILayout.PropertyField(_smooth);
-            }
 
-            EditorGUI.EndDisabledGroup();
+                EditorGUI.EndDisabledGroup();
+            }
 
             EditorGUI.indentLevel--;
 
@@ -87,6 +95,16 @@ namespace WPT
             _nOrder = serializedObject.FindProperty("_nOrder");
             _smooth = serializedObject.FindProperty("_smooth");
             _keypoints = serializedObject.FindProperty("_keypoints");
+        }
+
+        private void UpdateKalmanFilter()
+        {
+            var kalmanFilters = ((InferenceRunner)target).KalmanFilters;
+
+            for (int i = 0; i < kalmanFilters.Length; i++)
+            {
+                kalmanFilters[i].SetParameter(_timeInterval.doubleValue, _noise.doubleValue);
+            }
         }
     }
 }
