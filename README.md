@@ -3,8 +3,9 @@
 </p>
 
 ## Feature
-
 Using Mediapipe to track pose in Unity.
+
+<img width="50%" alt="WebcamPoseTracker" src="https://github.com/user-attachments/assets/0f561d3e-f4e3-4832-916d-f1e129039bae" />
 
 ## Install
 Follow the steps below.
