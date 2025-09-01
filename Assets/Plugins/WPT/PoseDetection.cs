@@ -4,7 +4,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using WPT.Filters;
 using WPT.Utilities;
 
 namespace WPT
@@ -13,25 +12,11 @@ namespace WPT
     {
         // Fields
 
-        public Vector3[] BonePositions = new Vector3[NumKeypoints];
-        public KalmanFilter[] KalmanFilters = new KalmanFilter[NumKeypoints];
-        public LowPassFilter[] LowPassFilters = new LowPassFilter[NumKeypoints];
-
-        public const int NumKeypoints = 33;
-        public const int DetectorInputSize = 224;
-        public const int LandmarkerInputSize = 256;
-
-
         [SerializeField] private ImageSource _imageSource;
         [SerializeField] private Keypoint[] _keypoints;
         [SerializeField] private PerformanceLevel _performanceLevel = PerformanceLevel.Full;
         [SerializeField] private BackendType _backendType = BackendType.GPUCompute;
-        [SerializeField] private FilterMode _filterMode = FilterMode.None;
         [SerializeField] private float _scoreThreshold = 0.75f;
-        [SerializeField] private float _timeInterval = 0.45f;
-        [SerializeField] private float _noise = 0.4f;
-        [SerializeField] private int _nOrder = 7;
-        [SerializeField] private float _smooth = 0.9f;
 
         private Worker _detectorWorker;
         private Worker _landmarkerWorker;
@@ -42,20 +27,17 @@ namespace WPT
         private float2x3 M2;
         private float[,] _anchors;
 
+        private const int NumKeypoints = 33;
+        private const int DetectorInputSize = 224;
+        private const int LandmarkerInputSize = 256;
+
+
+        // Properties
+
+        public Vector3[] Positions { get; set; } = new Vector3[NumKeypoints];
+
 
         // Methods
-
-        private void Awake()
-        {
-            for (int i = 0; i < NumKeypoints; i++)
-            {
-                KalmanFilters[i] = new KalmanFilter();
-                KalmanFilters[i].SetParameter(_timeInterval, _noise);
-                KalmanFilters[i].Predict();
-
-                LowPassFilters[i] = new LowPassFilter(_nOrder, _smooth);
-            }
-        }
 
         private async void Start()
         {
@@ -178,8 +160,8 @@ namespace WPT
             var delta = 0.5f * (_imageSource.Resolution + new Vector2(-size, size));
 
             M = MatrixUtils.Multiply(
-                MatrixUtils.TranslationMatrix(delta),
-                MatrixUtils.ScaleMatrix(scale, -scale));
+                    MatrixUtils.TranslationMatrix(delta),
+                    MatrixUtils.ScaleMatrix(scale, -scale));
 
             ImageUtils.SampleImageAffine(_imageSource.Texture, _detectorInput, M);
         }
@@ -217,25 +199,15 @@ namespace WPT
 
                 if (active)
                 {
-                    BonePositions[i] = new Vector3(
+                    Positions[i] = new Vector3(
                         imageSpacePosition.x - (0.5f * _imageSource.Resolution.x),
                         imageSpacePosition.y - (0.5f * _imageSource.Resolution.y),
                         landmarks[(5 * i) + 2]) / _imageSource.Resolution.y;
-
-                    if ((_filterMode & FilterMode.KalmanFilter) != 0)
-                    {
-                        BonePositions[i] = KalmanFilters[i].CorrectAndPredict(BonePositions[i]);
-                    }
-
-                    if ((_filterMode & FilterMode.LowPassFilter) != 0)
-                    {
-                        BonePositions[i] = LowPassFilters[i].CorrectAndPredict(BonePositions[i]);
-                    }
                 }
 
                 if (_keypoints != null && _keypoints.Length == NumKeypoints)
                 {
-                    _keypoints[i].SetValue(BonePositions[i], active);
+                    _keypoints[i].SetValue(Positions[i], active);
                 }
             }
         }
@@ -248,15 +220,7 @@ namespace WPT
         }
     }
 
-    [Flags]
-    public enum FilterMode
-    {
-        None = 0,
-        KalmanFilter = 1 << 0,
-        LowPassFilter = 1 << 1,
-    }
-
-    enum PerformanceLevel
+    public enum PerformanceLevel
     {
         Lite,
         Full,
