@@ -9,7 +9,7 @@ using WPT.Utilities;
 
 namespace WPT
 {
-    public sealed class InferenceRunner : MonoBehaviour
+    public sealed class PoseDetection : MonoBehaviour
     {
         // Fields
 
@@ -61,7 +61,7 @@ namespace WPT
         {
             if (_imageSource == null) return;
 
-            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>("Detection");
+            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>("Pose/Detection");
 
             await detectorHandle.Task;
 
@@ -82,9 +82,9 @@ namespace WPT
 
             var landmarkerHandle = _performanceLevel switch
             {
-                PerformanceLevel.Lite => Addressables.LoadAssetAsync<ModelAsset>("Landmarks_detector_lite"),
-                PerformanceLevel.Full => Addressables.LoadAssetAsync<ModelAsset>("Landmarks_detector_full"),
-                PerformanceLevel.Heavy => Addressables.LoadAssetAsync<ModelAsset>("Landmarks_detector_heavy"),
+                PerformanceLevel.Lite => Addressables.LoadAssetAsync<ModelAsset>("Pose/Landmarks_detector_lite"),
+                PerformanceLevel.Full => Addressables.LoadAssetAsync<ModelAsset>("Pose/Landmarks_detector_full"),
+                PerformanceLevel.Heavy => Addressables.LoadAssetAsync<ModelAsset>("Pose/Landmarks_detector_heavy"),
 
                 _ => throw new ArgumentOutOfRangeException(nameof(_performanceLevel), _performanceLevel, null)
             };
@@ -99,13 +99,14 @@ namespace WPT
             }
 
 
-            var anchorsHandle = Addressables.LoadAssetAsync<TextAsset>("Anchors");
+            var anchorsHandle = Addressables.LoadAssetAsync<TextAsset>("Pose/Anchors");
 
             await anchorsHandle.Task;
 
             if (anchorsHandle.Status == AsyncOperationStatus.Succeeded)
             {
                 var anchors = anchorsHandle.Result.text.Split('\n');
+
                 _anchors = new float[anchors.Length - 1, 4];
 
                 for (int i = 0; i < anchors.Length - 1; i++)
@@ -245,16 +246,6 @@ namespace WPT
             _detectorWorker?.Dispose();
             _landmarkerWorker?.Dispose();
         }
-
-
-        // Enums
-
-        enum PerformanceLevel
-        {
-            Lite,
-            Full,
-            Heavy,
-        }
     }
 
     [Flags]
@@ -263,5 +254,12 @@ namespace WPT
         None = 0,
         KalmanFilter = 1 << 0,
         LowPassFilter = 1 << 1,
+    }
+
+    enum PerformanceLevel
+    {
+        Lite,
+        Full,
+        Heavy,
     }
 }

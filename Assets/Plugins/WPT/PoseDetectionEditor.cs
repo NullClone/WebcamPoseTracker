@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace WPT
 {
-    [CustomEditor(typeof(InferenceRunner))]
-    sealed class InferenceRunnerEditor : Editor
+    [CustomEditor(typeof(PoseDetection))]
+    sealed class PoseDetectionEditor : Editor
     {
         // Properties
 
@@ -99,7 +99,7 @@ namespace WPT
 
         private void UpdateKalmanFilter()
         {
-            var kalmanFilters = ((InferenceRunner)target).KalmanFilters;
+            var kalmanFilters = ((PoseDetection)target).KalmanFilters;
 
             for (int i = 0; i < kalmanFilters.Length; i++)
             {

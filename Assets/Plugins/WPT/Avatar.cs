@@ -8,7 +8,7 @@ namespace WPT
     {
         // Fields
 
-        [SerializeField] private InferenceRunner _runner;
+        [SerializeField] private PoseDetection _poseDetection;
 
         private Animator _animator;
         private GameObject _baseObject;
@@ -22,7 +22,7 @@ namespace WPT
 
         private void Start()
         {
-            if (_runner == null) return;
+            if (_poseDetection == null) return;
 
             _animator = gameObject.GetComponent<Animator>();
 
@@ -177,7 +177,7 @@ namespace WPT
         {
             for (int i = 0; i < 32; i++)
             {
-                Bones[i].Position = _runner.BonePositions[i];
+                Bones[i].Position = _poseDetection.BonePositions[i];
             }
 
             Bones[(int)BoneIndex.Hips].Position = (
