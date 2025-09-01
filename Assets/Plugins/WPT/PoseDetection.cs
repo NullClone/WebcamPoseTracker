@@ -43,7 +43,7 @@ namespace WPT
         {
             if (_imageSource == null) return;
 
-            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>("Pose/Detection");
+            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>("pose_detection");
 
             await detectorHandle.Task;
 
@@ -64,9 +64,9 @@ namespace WPT
 
             var landmarkerHandle = _performanceLevel switch
             {
-                PerformanceLevel.Lite => Addressables.LoadAssetAsync<ModelAsset>("Pose/Landmarks_detector_lite"),
-                PerformanceLevel.Full => Addressables.LoadAssetAsync<ModelAsset>("Pose/Landmarks_detector_full"),
-                PerformanceLevel.Heavy => Addressables.LoadAssetAsync<ModelAsset>("Pose/Landmarks_detector_heavy"),
+                PerformanceLevel.Lite => Addressables.LoadAssetAsync<ModelAsset>("pose_landmarks_detector_lite"),
+                PerformanceLevel.Full => Addressables.LoadAssetAsync<ModelAsset>("pose_landmarks_detector_full"),
+                PerformanceLevel.Heavy => Addressables.LoadAssetAsync<ModelAsset>("pose_landmarks_detector_heavy"),
 
                 _ => throw new ArgumentOutOfRangeException(nameof(_performanceLevel), _performanceLevel, null)
             };
@@ -81,7 +81,7 @@ namespace WPT
             }
 
 
-            var anchorsHandle = Addressables.LoadAssetAsync<TextAsset>("Pose/Anchors");
+            var anchorsHandle = Addressables.LoadAssetAsync<TextAsset>("PoseAnchors");
 
             await anchorsHandle.Task;
 
