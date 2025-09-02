@@ -8,19 +8,17 @@ using WPT.Utilities;
 
 namespace WPT
 {
-    public sealed class PoseDetection : MonoBehaviour
+    public sealed class HandDetection : MonoBehaviour
     {
         // Fields
 
         [SerializeField] private ImageSource _imageSource;
         [Space]
-        [SerializeField] private PerformanceLevel _performanceLevel = PerformanceLevel.Full;
         [SerializeField] private BackendType _backendType = BackendType.GPUCompute;
-        [SerializeField, Range(0f, 1f)] private float _scoreThreshold = 0.75f;
+        [SerializeField, Range(0f, 1f)] private float _scoreThreshold = 0.5f;
         [Space]
         [SerializeField] private Keypoint[] _keypoints;
 
-        private DetectionManager _manager;
         private Worker _detectorWorker;
         private Worker _landmarkerWorker;
         private Tensor<float> _detectorInput;
@@ -30,9 +28,9 @@ namespace WPT
         private float2x3 M2;
         private float[,] _anchors;
 
-        private const int NumKeypoints = 33;
-        private const int DetectorInputSize = 224;
-        private const int LandmarkerInputSize = 256;
+        private const int NumKeypoints = 21;
+        private const int DetectorInputSize = 192;
+        private const int LandmarkerInputSize = 224;
 
 
         // Properties
@@ -46,9 +44,7 @@ namespace WPT
         {
             if (_imageSource == null) return;
 
-            _manager = DetectionManager.Instance;
-
-            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>("pose_detection");
+            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>("hand_detector");
 
             await detectorHandle.Task;
 
@@ -67,14 +63,7 @@ namespace WPT
             }
 
 
-            var landmarkerHandle = _performanceLevel switch
-            {
-                PerformanceLevel.Lite => Addressables.LoadAssetAsync<ModelAsset>("pose_landmarks_detector_lite"),
-                PerformanceLevel.Full => Addressables.LoadAssetAsync<ModelAsset>("pose_landmarks_detector_full"),
-                PerformanceLevel.Heavy => Addressables.LoadAssetAsync<ModelAsset>("pose_landmarks_detector_heavy"),
-
-                _ => throw new ArgumentOutOfRangeException(nameof(_performanceLevel), _performanceLevel, null)
-            };
+            var landmarkerHandle = Addressables.LoadAssetAsync<ModelAsset>("hand_landmarks_detector");
 
             await landmarkerHandle.Task;
 
@@ -86,7 +75,7 @@ namespace WPT
             }
 
 
-            var anchorsHandle = Addressables.LoadAssetAsync<TextAsset>("PoseAnchors");
+            var anchorsHandle = Addressables.LoadAssetAsync<TextAsset>("HandAnchors");
 
             await anchorsHandle.Task;
 
@@ -163,21 +152,29 @@ namespace WPT
         {
             var anchorPosition = DetectorInputSize * new float2(_anchors[idx, 0], _anchors[idx, 1]);
 
-            var kp1 = BlazeUtils.Multiply(M, anchorPosition + new float2(box[0, 0, 4], box[0, 0, 5]));
-            var kp2 = BlazeUtils.Multiply(M, anchorPosition + new float2(box[0, 0, 6], box[0, 0, 7]));
-            var delta = kp2 - kp1;
+            var boxCentre_TensorSpace = anchorPosition + new float2(box[0, 0, 0], box[0, 0, 1]);
+            var boxSize_TensorSpace = math.max(box[0, 0, 2], box[0, 0, 3]);
 
-            var halfInputSize = 0.5f * LandmarkerInputSize;
-            var scale = 1.25f * math.length(delta) / halfInputSize;
-            var theta = (0.5f * Mathf.PI) - math.atan2(delta.y, delta.x);
+            var kp0_TensorSpace = anchorPosition + new float2(box[0, 0, 4 + (2 * 0) + 0], box[0, 0, 4 + (2 * 0) + 1]);
+            var kp2_TensorSpace = anchorPosition + new float2(box[0, 0, 4 + (2 * 2) + 0], box[0, 0, 4 + (2 * 2) + 1]);
+            var delta_TensorSpace = kp2_TensorSpace - kp0_TensorSpace;
+            var up_TensorSpace = delta_TensorSpace / math.length(delta_TensorSpace);
+            var theta = math.atan2(delta_TensorSpace.y, delta_TensorSpace.x);
+            var rotation = (0.5f * Mathf.PI) - theta;
+            boxCentre_TensorSpace += 0.5f * boxSize_TensorSpace * up_TensorSpace;
+            boxSize_TensorSpace *= 2.6f;
 
-            M2 = BlazeUtils.Multiply(
-                       BlazeUtils.Multiply(
-                           BlazeUtils.Multiply(
-                               BlazeUtils.TranslationMatrix(kp1),
-                               BlazeUtils.ScaleMatrix(scale, -scale)),
-                           BlazeUtils.RotationMatrix(theta)),
-                       BlazeUtils.TranslationMatrix(-new float2(halfInputSize, halfInputSize)));
+            var origin2 = new float2(0.5f * LandmarkerInputSize, 0.5f * LandmarkerInputSize);
+            var scale2 = boxSize_TensorSpace / LandmarkerInputSize;
+
+            M2 = BlazeUtils.Multiply(M,
+                    BlazeUtils.Multiply(
+                        BlazeUtils.Multiply(
+                            BlazeUtils.Multiply(
+                                BlazeUtils.TranslationMatrix(boxCentre_TensorSpace),
+                                BlazeUtils.ScaleMatrix(scale2, -scale2)),
+                            BlazeUtils.RotationMatrix(rotation)),
+                        BlazeUtils.TranslationMatrix(-origin2)));
 
             ImageUtils.SampleImageAffine(_imageSource.Texture, _landmarkerInput, M2);
         }
@@ -186,25 +183,18 @@ namespace WPT
         {
             for (int i = 0; i < NumKeypoints; i++)
             {
-                var imageSpacePosition = BlazeUtils.Multiply(M2, new float2(landmarks[(5 * i) + 0], landmarks[(5 * i) + 1]));
+                var imageSpacePosition = BlazeUtils.Multiply(M2, new float2(landmarks[(3 * i) + 0], landmarks[(3 * i) + 1]));
 
-                var active = landmarks[(5 * i) + 3] > 0.5f && landmarks[(5 * i) + 4] > 0.5f;
-
-                if (active)
-                {
-                    Positions[i] = new Vector3(
+                Positions[i] = new Vector3(
                         imageSpacePosition.x - (0.5f * _imageSource.Resolution.x),
                         imageSpacePosition.y - (0.5f * _imageSource.Resolution.y),
-                        landmarks[(5 * i) + 2]) / _imageSource.Resolution.y;
-                }
+                        landmarks[(3 * i) + 2]) / _imageSource.Resolution.y;
 
                 if (_keypoints != null && _keypoints.Length == NumKeypoints)
                 {
-                    _keypoints[i].SetValue(Positions[i], active);
+                    _keypoints[i].SetValue(Positions[i], true);
                 }
             }
-
-            _manager.SetFilter(Positions);
         }
 
         private void OnDestroy()
@@ -213,12 +203,5 @@ namespace WPT
             _detectorWorker?.Dispose();
             _landmarkerWorker?.Dispose();
         }
-    }
-
-    public enum PerformanceLevel
-    {
-        Lite,
-        Full,
-        Heavy,
     }
 }

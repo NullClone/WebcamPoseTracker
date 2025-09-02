@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace WPT
 {
-    [SerializeField]
     public class Bone
     {
         public Transform Transform;

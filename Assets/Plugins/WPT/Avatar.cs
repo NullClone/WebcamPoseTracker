@@ -1,5 +1,4 @@
 using UnityEngine;
-using WPT.Utilities;
 
 namespace WPT
 {
@@ -8,8 +7,7 @@ namespace WPT
     {
         // Fields
 
-        [SerializeField] private DetectionManager _manager;
-
+        private DetectionManager _manager;
         private Animator _animator;
         private GameObject _baseObject;
         private Vector3 _basePosition;
@@ -22,6 +20,8 @@ namespace WPT
 
         private void Start()
         {
+            _manager = DetectionManager.Instance;
+
             if (_manager == null) return;
 
             _animator = gameObject.GetComponent<Animator>();
@@ -49,6 +49,13 @@ namespace WPT
         private void Update()
         {
             if (!_isInitialized) return;
+
+            for (int i = 0; i < 32; i++)
+            {
+                if (_manager.Positions == null) continue;
+
+                Bones[i].Position = _manager.Positions[i];
+            }
 
             SetPosition();
 
@@ -138,7 +145,7 @@ namespace WPT
 
         private void SetInverse()
         {
-            var forward = MatrixUtils.TriangleNormal(
+            var forward = TriangleNormal(
                 Bones[(int)BoneIndex.Hips].Transform.position,
                 Bones[(int)BoneIndex.LeftHip].Transform.position,
                 Bones[(int)BoneIndex.RightHip].Transform.position);
@@ -151,7 +158,7 @@ namespace WPT
 
                 if (bone.Child != null && bone.Child.Transform != null)
                 {
-                    var rotation = MatrixUtils.LookRotation(
+                    var rotation = LookRotation(
                         bone.Transform.position -
                         bone.Child.Transform.position, forward);
 
@@ -161,25 +168,20 @@ namespace WPT
             }
 
             var hips = Bones[(int)BoneIndex.Hips];
-            hips.Inverse = Quaternion.Inverse(MatrixUtils.LookRotation(forward, Vector3.up));
+            hips.Inverse = Quaternion.Inverse(LookRotation(forward, Vector3.up));
             hips.InverseRotation = hips.Inverse * hips.InitRotation;
 
             var spine = Bones[(int)BoneIndex.Spine];
-            spine.Inverse = Quaternion.Inverse(MatrixUtils.LookRotation(forward, Vector3.up));
+            spine.Inverse = Quaternion.Inverse(LookRotation(forward, Vector3.up));
             spine.InverseRotation = spine.Inverse * spine.InitRotation;
 
             var head = Bones[(int)BoneIndex.Nose];
-            head.Inverse = Quaternion.Inverse(MatrixUtils.LookRotation(forward, Vector3.up));
+            head.Inverse = Quaternion.Inverse(LookRotation(forward, Vector3.up));
             head.InverseRotation = head.Inverse * head.InitRotation;
         }
 
         private void SetPosition()
         {
-            for (int i = 0; i < 32; i++)
-            {
-                Bones[i].Position = _manager.Positions[i];
-            }
-
             Bones[(int)BoneIndex.Hips].Position = (
                 Bones[(int)BoneIndex.LeftHip].Position +
                 Bones[(int)BoneIndex.RightHip].Position) / 2f;
@@ -194,7 +196,7 @@ namespace WPT
 
         private void UpdateModel()
         {
-            var forward = MatrixUtils.TriangleNormal(
+            var forward = TriangleNormal(
                 Bones[(int)BoneIndex.Hips].Position,
                 Bones[(int)BoneIndex.LeftHip].Position,
                 Bones[(int)BoneIndex.RightHip].Position);
@@ -207,20 +209,20 @@ namespace WPT
 
                 if (bone.Parent != null)
                 {
-                    bone.Transform.rotation = MatrixUtils.LookRotation(
+                    bone.Transform.rotation = LookRotation(
                         bone.Position - bone.Child.Position,
                         bone.Parent.Position - bone.Position) * bone.InverseRotation;
                 }
                 else if (bone.Child != null)
                 {
-                    bone.Transform.rotation = MatrixUtils.LookRotation(
+                    bone.Transform.rotation = LookRotation(
                         bone.Position - bone.Child.Position, forward) * bone.InverseRotation;
                 }
             }
 
             var hips = Bones[(int)BoneIndex.Hips];
 
-            hips.Transform.rotation = MatrixUtils.LookRotation(forward, Vector3.up) * hips.InverseRotation;
+            hips.Transform.rotation = LookRotation(forward, Vector3.up) * hips.InverseRotation;
 
             var spine = Bones[(int)BoneIndex.Spine];
 
@@ -232,16 +234,36 @@ namespace WPT
 
             var spineForwardDirection = Vector3.Cross(shoulderWidthVector, targetSpineUp);
 
-            spine.Transform.rotation = MatrixUtils.LookRotation(spineForwardDirection, targetSpineUp) * spine.InverseRotation;
+            spine.Transform.rotation = LookRotation(spineForwardDirection, targetSpineUp) * spine.InverseRotation;
 
             var head = Bones[(int)BoneIndex.Nose];
 
             var eyeMidPoint = (Bones[(int)BoneIndex.LeftEye].Position + Bones[(int)BoneIndex.RightEye].Position) / 2f;
             var earMidPoint = (Bones[(int)BoneIndex.LeftEar].Position + Bones[(int)BoneIndex.RightEar].Position) / 2f;
 
-            head.Transform.rotation = MatrixUtils.LookRotation(eyeMidPoint - earMidPoint, Vector3.up) * head.InverseRotation;
+            head.Transform.rotation = LookRotation(eyeMidPoint - earMidPoint, Vector3.up) * head.InverseRotation;
 
             gameObject.transform.position = hips.Position + _basePosition;
+        }
+
+
+        private static Quaternion LookRotation(Vector3 forward, Vector3 upwards)
+        {
+            if (forward == Vector3.zero)
+            {
+                return Quaternion.identity;
+            }
+
+            return Quaternion.LookRotation(forward, upwards);
+        }
+
+        private static Vector3 TriangleNormal(Vector3 a, Vector3 b, Vector3 c)
+        {
+            var result = Vector3.Cross(a - b, a - c);
+
+            result.Normalize();
+
+            return result;
         }
     }
 }

@@ -4,11 +4,10 @@ using WPT.Filters;
 
 namespace WPT
 {
-    public sealed class DetectionManager : MonoBehaviour
+    public sealed class DetectionManager : SingletonMonoBehaviour<DetectionManager>
     {
         // Fields
 
-        [SerializeField] private PoseDetection _poseDetection;
         [SerializeField] private FilterMode _filterMode = FilterMode.None;
         [SerializeField] private float _timeInterval = 0.45f;
         [SerializeField] private float _noise = 0.4f;
@@ -29,12 +28,10 @@ namespace WPT
 
         private void Awake()
         {
-            int num = _poseDetection.Positions.Length;
+            KalmanFilters = new KalmanFilter[33];
+            LowPassFilters = new LowPassFilter[33];
 
-            KalmanFilters = new KalmanFilter[num];
-            LowPassFilters = new LowPassFilter[num];
-
-            for (int i = 0; i < num; i++)
+            for (int i = 0; i < 33; i++)
             {
                 KalmanFilters[i] = new KalmanFilter();
                 KalmanFilters[i].SetParameter(_timeInterval, _noise);
@@ -44,13 +41,16 @@ namespace WPT
             }
         }
 
-        private void Update()
+        public override void Update()
         {
-            int num = _poseDetection.Positions.Length;
+            base.Update();
+        }
 
-            Positions = _poseDetection.Positions;
+        public void SetFilter(Vector3[] value)
+        {
+            Positions = value;
 
-            for (int i = 0; i < num; i++)
+            for (int i = 0; i < 33; i++)
             {
                 if ((_filterMode & FilterMode.KalmanFilter) != 0)
                 {

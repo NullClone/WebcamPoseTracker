@@ -10,7 +10,6 @@ namespace WPT
     {
         // Properties
 
-        private SerializedProperty _poseDetection;
         private SerializedProperty _filterMode;
         private SerializedProperty _timeInterval;
         private SerializedProperty _noise;
@@ -23,9 +22,6 @@ namespace WPT
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
-
-            EditorGUILayout.PropertyField(_poseDetection);
-            EditorGUILayout.Space();
 
             var filterMode = (FilterMode)_filterMode.enumValueFlag;
 
@@ -71,7 +67,6 @@ namespace WPT
 
         private void OnEnable()
         {
-            _poseDetection = serializedObject.FindProperty("_poseDetection");
             _filterMode = serializedObject.FindProperty("_filterMode");
             _timeInterval = serializedObject.FindProperty("_timeInterval");
             _noise = serializedObject.FindProperty("_noise");
