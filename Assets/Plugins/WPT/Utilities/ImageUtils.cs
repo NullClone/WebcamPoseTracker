@@ -6,7 +6,8 @@ namespace WPT.Utilities
 {
     public static class ImageUtils
     {
-        private static readonly ComputeShader _shader = (ComputeShader)Resources.Load("ImageTransform");
+        private static readonly ComputeShader _shader = Resources.Load<ComputeShader>("Shader/ImageTransform");
+
         private static readonly int ImageSample = _shader.FindKernel("ImageSample");
         private static readonly int Optr = Shader.PropertyToID("Optr");
         private static readonly int X_tex2D = Shader.PropertyToID("X_tex2D");

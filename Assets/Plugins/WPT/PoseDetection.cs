@@ -2,8 +2,6 @@ using System;
 using Unity.InferenceEngine;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using WPT.Utilities;
 
 namespace WPT
@@ -48,52 +46,44 @@ namespace WPT
 
             _manager = DetectionManager.Instance;
 
-            var detectorHandle = Addressables.LoadAssetAsync<ModelAsset>("pose_detection");
+            var detectorRequest = Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_detection.onnx");
 
-            await detectorHandle.Task;
+            await detectorRequest;
 
-            if (detectorHandle.Status == AsyncOperationStatus.Succeeded)
+            var detectorModel = ModelLoader.Load((ModelAsset)detectorRequest.asset);
+            var graph = new FunctionalGraph();
+            var input = graph.AddInput(detectorModel, 0);
+            var outputs = Functional.Forward(detectorModel, input);
+            var detectionScores = Functional.Sigmoid(Functional.Clamp(outputs[1], -100f, 100f));
+            var bestScoreIndex = Functional.ArgMax(outputs[1], 1).Squeeze();
+            var selectedBoxes = Functional.IndexSelect(outputs[0], 1, bestScoreIndex).Unsqueeze(0);
+            var selectedScores = Functional.IndexSelect(detectionScores, 1, bestScoreIndex).Unsqueeze(0);
+
+            _detectorWorker = new Worker(graph.Compile(bestScoreIndex, selectedScores, selectedBoxes), _backendType);
+
+
+            var landmarkerRequest = _performanceLevel switch
             {
-                var detectorModel = ModelLoader.Load(detectorHandle.Result);
-                var graph = new FunctionalGraph();
-                var input = graph.AddInput(detectorModel, 0);
-                var outputs = Functional.Forward(detectorModel, input);
-                var detectionScores = Functional.Sigmoid(Functional.Clamp(outputs[1], -100f, 100f));
-                var bestScoreIndex = Functional.ArgMax(outputs[1], 1).Squeeze();
-                var selectedBoxes = Functional.IndexSelect(outputs[0], 1, bestScoreIndex).Unsqueeze(0);
-                var selectedScores = Functional.IndexSelect(detectionScores, 1, bestScoreIndex).Unsqueeze(0);
+                PerformanceLevel.Lite => Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_landmarks_detector_lite.onnx"),
+                PerformanceLevel.Full => Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_landmarks_detector_full.onnx"),
+                PerformanceLevel.Heavy => Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_landmarks_detector_heavy.onnx"),
 
-                _detectorWorker = new Worker(graph.Compile(bestScoreIndex, selectedScores, selectedBoxes), _backendType);
-            }
-
-
-            var landmarkerHandle = _performanceLevel switch
-            {
-                PerformanceLevel.Lite => Addressables.LoadAssetAsync<ModelAsset>("pose_landmarks_detector_lite"),
-                PerformanceLevel.Full => Addressables.LoadAssetAsync<ModelAsset>("pose_landmarks_detector_full"),
-                PerformanceLevel.Heavy => Addressables.LoadAssetAsync<ModelAsset>("pose_landmarks_detector_heavy"),
-
-                _ => throw new ArgumentOutOfRangeException(nameof(_performanceLevel), _performanceLevel, null)
+                _ => throw new NotImplementedException()
             };
 
-            await landmarkerHandle.Task;
+            await landmarkerRequest;
 
-            if (landmarkerHandle.Status == AsyncOperationStatus.Succeeded)
-            {
-                var landmarkerModel = ModelLoader.Load(landmarkerHandle.Result);
+            var landmarkerModel = ModelLoader.Load((ModelAsset)landmarkerRequest.asset);
 
-                _landmarkerWorker = new Worker(landmarkerModel, _backendType);
-            }
+            _landmarkerWorker = new Worker(landmarkerModel, _backendType);
 
 
-            var anchorsHandle = Addressables.LoadAssetAsync<TextAsset>("PoseAnchors");
+            var anchorsRequest = Resources.LoadAsync<TextAsset>("Anchors/PoseAnchors.csv");
 
-            await anchorsHandle.Task;
+            await anchorsRequest;
 
-            if (anchorsHandle.Status == AsyncOperationStatus.Succeeded)
-            {
-                _anchors = BlazeUtils.LoadAnchors(anchorsHandle.Result.text);
-            }
+            _anchors = BlazeUtils.LoadAnchors((TextAsset)anchorsRequest.asset);
+
 
             if (_detectorWorker != null && _landmarkerWorker != null && _anchors != null)
             {
@@ -118,9 +108,9 @@ namespace WPT
                 _landmarkerInput.Dispose();
             }
 
-            detectorHandle.Release();
-            landmarkerHandle.Release();
-            anchorsHandle.Release();
+            Resources.UnloadAsset(detectorRequest.asset);
+            Resources.UnloadAsset(landmarkerRequest.asset);
+            Resources.UnloadAsset(anchorsRequest.asset);
         }
 
         private async Awaitable Detect()

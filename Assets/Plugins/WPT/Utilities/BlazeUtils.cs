@@ -1,12 +1,13 @@
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace WPT.Utilities
 {
     public static class BlazeUtils
     {
-        public static float[,] LoadAnchors(string value)
+        public static float[,] LoadAnchors(TextAsset textAsset)
         {
-            var anchors = value.Split('\n');
+            var anchors = textAsset.text.Split('\n');
 
             var result = new float[anchors.Length - 1, 4];
 
