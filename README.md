@@ -1,6 +1,6 @@
-<p align="center">
-  <img width="50%" alt="WebcamPoseTracker" src="https://github.com/user-attachments/assets/ce83c23a-76e9-490f-8f32-4d9e48746494" />
-</p>
+> [!WARNING]
+> This repository has been archived as further improvement is needed.
+The new repository is [here](https://github.com/NullClone/PrismMotionTracker).
 
 ## Feature
 Using Mediapipe to track pose in Unity.
@@ -137,11 +137,6 @@ Open the scene from `Assets > Scenes > PoseTracking`
     </tr>
   </tbody>
 </table>
-
-### Image Source
-<p align="center">
-  <img width="50%" alt="Image Source" src="https://github.com/user-attachments/assets/30eeeb6f-64a6-407f-a40b-f6d9e5ba5982" />
-</p>
 
 ## Roadmap
 - [x] Implementing Kalman Filter
