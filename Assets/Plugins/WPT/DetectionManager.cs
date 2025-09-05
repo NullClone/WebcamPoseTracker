@@ -19,6 +19,8 @@ namespace WPT
 
         public Vector3[] Positions { get; set; }
 
+        public bool[] Actives { get; set; }
+
         public KalmanFilter[] KalmanFilters { get; set; }
 
         public LowPassFilter[] LowPassFilters { get; set; }
@@ -30,6 +32,7 @@ namespace WPT
         {
             KalmanFilters = new KalmanFilter[33];
             LowPassFilters = new LowPassFilter[33];
+            Actives = new bool[33];
 
             for (int i = 0; i < 33; i++)
             {

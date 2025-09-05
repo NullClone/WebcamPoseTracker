@@ -10,8 +10,6 @@ namespace WPT.Filters
         private readonly float _smooth = 0.9f;
         private readonly Vector3[] _prevPositions = new Vector3[10];
 
-        private int _effectiveCount = 0;
-
 
         // Methods
 
@@ -31,13 +29,6 @@ namespace WPT.Filters
             }
 
             _prevPositions[0] = (_prevPositions[0] * (1f - _smooth)) + (_prevPositions[_nOrder - 1] * _smooth);
-
-            if (_effectiveCount < 10)
-            {
-                _effectiveCount++;
-
-                return value;
-            }
 
             return _prevPositions[0];
         }

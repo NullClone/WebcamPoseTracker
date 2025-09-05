@@ -23,8 +23,6 @@ namespace WPT.Filters
             { 0, 0, 0, 0, 1, 0, }
         };
 
-        private int _effectiveCount;
-
 
         // Methods
 
@@ -51,8 +49,6 @@ namespace WPT.Filters
                 { 0, 0, 0, 0, 1, timeInterval },
                 { 0, 0, 0, 0, 0, 1 }
             };
-
-            _effectiveCount = 0;
         }
 
         public void Predict()
@@ -84,14 +80,7 @@ namespace WPT.Filters
             Correct(value);
             Predict();
 
-            if (_effectiveCount >= 50)
-            {
-                return new Vector3((float)state[0], (float)state[2], (float)state[4]);
-            }
-
-            ++_effectiveCount;
-
-            return value;
+            return new Vector3((float)state[0], (float)state[2], (float)state[4]);
         }
     }
 }

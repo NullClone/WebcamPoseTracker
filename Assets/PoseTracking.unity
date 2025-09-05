@@ -8085,7 +8085,7 @@ MonoBehaviour:
   _imageSource: {fileID: 1814564739}
   _performanceLevel: 1
   _backendType: 256
-  _scoreThreshold: 0.6
+  _scoreThreshold: 0.65
   _keypoints:
   - {fileID: 1206135841}
   - {fileID: 1561620948}
@@ -8151,7 +8151,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: WPT::WPT.HandDetection
   _imageSource: {fileID: 1814564739}
   _backendType: 256
-  _scoreThreshold: 0.5
+  _scoreThreshold: 0.65
   _keypoints:
   - {fileID: 848560434}
   - {fileID: 1305607206}

@@ -37,6 +37,8 @@ namespace WPT
 
         public Vector3[] Positions { get; set; } = new Vector3[NumKeypoints];
 
+        public bool[] Actives { get; set; } = new bool[NumKeypoints];
+
 
         // Methods
 
@@ -46,7 +48,7 @@ namespace WPT
 
             _manager = DetectionManager.Instance;
 
-            var detectorRequest = Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_detection.onnx");
+            var detectorRequest = Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_detection");
 
             await detectorRequest;
 
@@ -64,9 +66,9 @@ namespace WPT
 
             var landmarkerRequest = _performanceLevel switch
             {
-                PerformanceLevel.Lite => Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_landmarks_detector_lite.onnx"),
-                PerformanceLevel.Full => Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_landmarks_detector_full.onnx"),
-                PerformanceLevel.Heavy => Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_landmarks_detector_heavy.onnx"),
+                PerformanceLevel.Lite => Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_landmarks_detector_lite"),
+                PerformanceLevel.Full => Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_landmarks_detector_full"),
+                PerformanceLevel.Heavy => Resources.LoadAsync<ModelAsset>("ONNX/Pose/pose_landmarks_detector_heavy"),
 
                 _ => throw new NotImplementedException()
             };
@@ -78,7 +80,7 @@ namespace WPT
             _landmarkerWorker = new Worker(landmarkerModel, _backendType);
 
 
-            var anchorsRequest = Resources.LoadAsync<TextAsset>("Anchors/PoseAnchors.csv");
+            var anchorsRequest = Resources.LoadAsync<TextAsset>("Anchors/PoseAnchors");
 
             await anchorsRequest;
 
@@ -195,6 +197,7 @@ namespace WPT
             }
 
             _manager.SetFilter(Positions);
+            _manager.Actives = Actives;
         }
 
         private void OnDestroy()

@@ -42,7 +42,7 @@ namespace WPT
         {
             if (_imageSource == null) return;
 
-            var detectorRequest = Resources.LoadAsync<ModelAsset>("ONNX/Hand/hand_detector.onnx");
+            var detectorRequest = Resources.LoadAsync<ModelAsset>("ONNX/Hand/hand_detector");
 
             await detectorRequest;
 
@@ -58,7 +58,7 @@ namespace WPT
             _detectorWorker = new Worker(graph.Compile(bestScoreIndex, selectedScores, selectedBoxes), _backendType);
 
 
-            var landmarkerRequest = Resources.LoadAsync<ModelAsset>("ONNX/Hand/hand_landmarks_detector.onnx");
+            var landmarkerRequest = Resources.LoadAsync<ModelAsset>("ONNX/Hand/hand_landmarks_detector");
 
             await landmarkerRequest;
 
@@ -67,7 +67,7 @@ namespace WPT
             _landmarkerWorker = new Worker(landmarkerModel, _backendType);
 
 
-            var anchorsRequest = Resources.LoadAsync<TextAsset>("Anchors/HandAnchors.csv");
+            var anchorsRequest = Resources.LoadAsync<TextAsset>("Anchors/HandAnchors");
 
             await anchorsRequest;
 
